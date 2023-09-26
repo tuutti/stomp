@@ -1,0 +1,5 @@
+name: STOMP
+type: module
+description: Integrate Drupal with an external STOMP or AMQP message queue, such as ActiveMQ.
+package: Stomp
+core_version_requirement: ^9 || ^10

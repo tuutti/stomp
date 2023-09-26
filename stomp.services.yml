@@ -1,0 +1,7 @@
+services:
+  stomp.factory:
+    class: \Drupal\stomp\StompFactory
+
+  logger.channel.stomp:
+    parent: 'logger.channel_base'
+    arguments: ['stomp']
