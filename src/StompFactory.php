@@ -5,12 +5,21 @@ declare(strict_types = 1);
 namespace Drupal\stomp;
 
 use Stomp\Client;
-use Stomp\Network\Observer\HeartbeatEmitter;
-use Stomp\Network\Observer\ServerAliveObserver;
-use Stomp\StatefulStomp;
 
+/**
+ * A factory to construct STOMP client objects.
+ */
 final class StompFactory {
 
+  /**
+   * Constructs a new STOMP client.
+   *
+   * @param \Drupal\stomp\Connection $connection
+   *   The connection parameters.
+   *
+   * @return \Stomp\Client
+   *   The STOMP client.
+   */
   public function create(Connection $connection) : Client {
     $key = array_key_first($connection->brokers);
 

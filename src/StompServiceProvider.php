@@ -23,9 +23,9 @@ final class StompServiceProvider extends ServiceProviderBase {
   public function register(ContainerBuilder $container) : void {
     $settings = Settings::get('stomp', []);
     foreach ($settings as $key => $value) {
-      // Definition's setArguments method doesn't seem to support array
+      // Definition's setArguments method doesn't support array
       // spreading, so we have to construct the connection object and
-      // to pass the arguments manually to utilize the default values.
+      // pass the arguments manually to utilize the default values.
       $connection = new Connection(...$value);
       $connectionService = new Definition(Connection::class, [
         $connection->clientId,

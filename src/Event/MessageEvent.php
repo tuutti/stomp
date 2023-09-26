@@ -24,6 +24,15 @@ final class MessageEvent extends Event {
   ) {
   }
 
+  /**
+   * Constructs a corresponding message object for the given message type.
+   *
+   * @param mixed $body
+   *   The body.
+   *
+   * @return self
+   *   The self.
+   */
   public static function create(mixed $body) : self {
     if ($body instanceof Message) {
       return new self($body);

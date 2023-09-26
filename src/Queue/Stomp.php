@@ -14,10 +14,32 @@ use Stomp\Exception\StompException;
 use Stomp\Transport\Frame;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
+/**
+ * A service to interact with STOMP server.
+ */
 final class Stomp implements ReliableQueueInterface {
 
+  /**
+   * The durable subscription service.
+   *
+   * @var \Stomp\Broker\ActiveMq\Mode\DurableSubscription|null
+   */
   private ?DurableSubscription $durableSubscription = NULL;
 
+  /**
+   * Constructs a new instance.
+   *
+   * @param \Stomp\Client $stompClient
+   *   The STOMP client.
+   * @param \Symfony\Component\EventDispatcher\EventDispatcherInterface $eventDispatcher
+   *   The event dispatcher.
+   * @param \Psr\Log\LoggerInterface $logger
+   *   The logger.
+   * @param string $queue
+   *   The queue name.
+   * @param int $logLevel
+   *   The desired minimum log level.
+   */
   public function __construct(
     private readonly Client $stompClient,
     private readonly EventDispatcherInterface $eventDispatcher,
@@ -27,6 +49,12 @@ final class Stomp implements ReliableQueueInterface {
   ) {
   }
 
+  /**
+   * Gets the queue name.
+   *
+   * @return string
+   *   The queue.
+   */
   private function getQueue() : string {
     return sprintf('/queue/%s', $this->queue);
   }
@@ -38,6 +66,14 @@ final class Stomp implements ReliableQueueInterface {
     $this->stompClient->disconnect();
   }
 
+  /**
+   * Initializes a "durable" connection to STOMP service.
+   *
+   * @return \Stomp\Broker\ActiveMq\Mode\DurableSubscription
+   *   The Durable subscription.
+   *
+   * @throws \Stomp\Exception\StompException
+   */
   private function connect() : DurableSubscription {
     if (!$this->durableSubscription) {
       $this->durableSubscription = new DurableSubscription(
@@ -103,6 +139,16 @@ final class Stomp implements ReliableQueueInterface {
     return FALSE;
   }
 
+  /**
+   * A logger wrapper to only log messages with certain log level.
+   *
+   * @param string $message
+   *   The message.
+   * @param array $context
+   *   The context.
+   * @param int $level
+   *   The log level.
+   */
   private function log(string $message, array $context = [], int $level = RfcLogLevel::ERROR) : void {
     if ($this->logLevel < $level) {
       return;
