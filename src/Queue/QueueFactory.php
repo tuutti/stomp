@@ -46,7 +46,10 @@ final class QueueFactory implements ContainerAwareInterface {
     if (!isset($this->queues[$name])) {
       $service = 'stomp.queue.' . $name;
 
-      if (!$this->container->has($name)) {
+      $defaultQueueService = $this->settings->get('queue_default');
+      // Fallback to first available queue when 'queue_default' setting
+      // is set to use stomp and no queue specific configuration is found.
+      if (!$this->container->has($name) && str_starts_with($defaultQueueService, 'queue.stomp.')) {
         $stompServices = $this->settings->get('stomp', []);
 
         if (!empty($stompServices)) {

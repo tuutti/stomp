@@ -24,16 +24,18 @@ final class StompServiceProvider extends ServiceProviderBase {
     $settings = Settings::get('stomp', []);
     foreach ($settings as $key => $value) {
       // Definition's setArguments method doesn't support array
-      // spreading, so we have to construct the connection object and
+      // spreading, so we have to construct the configuration object and
       // pass the arguments manually to utilize the default values.
-      $connection = new Connection(...$value);
-      $connectionService = new Definition(Connection::class, [
-        $connection->clientId,
-        $connection->user,
-        $connection->pass,
-        $connection->randomize,
-        $connection->brokers,
+      $configuration = new Configuration(...$value);
+      $connectionService = new Definition(Configuration::class, [
+        $configuration->clientId,
+        $configuration->brokers,
+        $configuration->destination,
+        $configuration->user,
+        $configuration->pass,
+        $configuration->heartbeat,
       ]);
+      $connectionService->setPublic(TRUE);
       $container->setDefinition('stomp.connection.' . $key, $connectionService);
 
       $stompFactory = new Definition(StompFactory::class, [
@@ -45,15 +47,16 @@ final class StompServiceProvider extends ServiceProviderBase {
         $stompFactory,
         new Reference('event_dispatcher'),
         new Reference('logger.channel.stomp'),
-        $key,
-        $connection->logLevel,
+        $configuration->destination,
       ]);
+      $queue->setPublic(TRUE);
       $container->setDefinition('stomp.queue.' . $key, $queue);
 
       $queueFactory = new Definition(QueueFactory::class, [
         new Reference('settings'),
       ]);
-      $queueFactory->addMethodCall('setContainer', [new Reference('service_container')]);
+      $queueFactory->addMethodCall('setContainer', [new Reference('service_container')])
+        ->setPublic(TRUE);
       $container->setDefinition('queue.stomp.' . $key, $queueFactory);
     }
 
