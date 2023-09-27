@@ -11,6 +11,7 @@ use Drupal\stomp\Queue\QueueFactory;
 use Drupal\stomp\Queue\Stomp;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
+use Webmozart\Assert\Assert;
 
 /**
  * Dynamically register configured STOMP queue services.
@@ -23,6 +24,7 @@ final class StompServiceProvider extends ServiceProviderBase {
   public function register(ContainerBuilder $container) : void {
     $settings = Settings::get('stomp', []);
     foreach ($settings as $key => $value) {
+      Assert::alpha($key);
       // Definition's setArguments method doesn't support array
       // spreading, so we have to construct the configuration object and
       // pass the arguments manually to utilize the default values.

@@ -24,6 +24,20 @@ class ServiceProviderTest extends UnitTestCase {
   }
 
   /**
+   * Make sure stomp configuration provides a string key.
+   */
+  public function testInvalidSettingKey() : void {
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessageMatches('/Expected a string./');
+    new Settings([
+      'stomp' => [0 => []],
+    ]);
+    $container = new ContainerBuilder();
+    $sut = new StompServiceProvider();
+    $sut->register($container);
+  }
+
+  /**
    * Tests dynamic service registration with proper settings.
    */
   public function testRegister() : void {
