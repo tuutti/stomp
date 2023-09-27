@@ -1,6 +1,6 @@
 # STOMP
 
-![CI](https://github.com/City-of-Helsinki/drupal-module-stomp/workflows/CI/badge.svg)
+![CI](https://github.com/City-of-Helsinki/drupal-module-stomp/workflows/CI/badge.svg) [![codecov](https://codecov.io/gh/City-of-Helsinki/drupal-module-stomp/graph/badge.svg?token=0B2TNXYU14)](https://codecov.io/gh/City-of-Helsinki/drupal-module-stomp)
 
 This module integrates Drupal with an external STOMP or AMQP message queue, such as ActiveMQ.
 
@@ -55,9 +55,12 @@ $settings['stomp']['default']['heartbeat'] = [];
 To modify heartbeat timeouts:
 ```php
 $settings['stomp']['default']['heartbeat'] = [
-  // Signals the server that we're going to send alive signals within an interval of 500ms.
+  // Signals the server that we're going to send
+  // alive signals within an interval of 500ms.
   'send' => 500,
-  // We must assure that we'll send data within less than 500ms so our read timeout must be lower as well (250000  = 250ms).
+  // We must assure that we'll send data within less
+  // than 500ms so our read timeout must be lower
+  // as well (250000  = 250ms).
   'readTimeout' => ['microseconds' => 250000],
 ];
 ```
