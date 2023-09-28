@@ -35,16 +35,16 @@ class ConfigurationTest extends UnitTestCase {
       'client',
       'tcp://127.0.0.1:1234',
       '/topic/test',
-      user: 'user1',
-      pass: 'pass1',
+      login: 'user1',
+      passcode: 'pass1',
       heartbeat: [],
     ));
     $this->assertProps(new Configuration(
       'client',
       'tcp://127.0.0.1:1234',
       '/queue/test',
-      user: 'user1',
-      pass: 'pass1',
+      login: 'user1',
+      passcode: 'pass1',
       heartbeat: ['send' => 1, 'readTimeout' => ['microseconds' => 250]],
     ));
   }

@@ -41,8 +41,8 @@ $settings['queue_reliable_service_{queue_name}'] = 'queue.stomp.default';
 ### Providing login credentials
 
 ```php
-$settings['stomp']['default']['user'] = 'username';
-$settings['stomp']['default']['pass'] = 'password';
+$settings['stomp']['default']['login'] = 'username';
+$settings['stomp']['default']['passcode'] = 'password';
 ```
 
 ### Heartbeat

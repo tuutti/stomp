@@ -59,10 +59,10 @@ class ServiceProviderTest extends UnitTestCase {
     $sut->register($container);
 
     $services = [
-      'stomp.connection.first',
+      'stomp.configuration.first',
       'stomp.queue.first',
       'queue.stomp.first',
-      'stomp.connection.second',
+      'stomp.configuration.second',
       'stomp.queue.second',
       'queue.stomp.second',
     ];

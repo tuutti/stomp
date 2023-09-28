@@ -33,20 +33,20 @@ final class StompServiceProvider extends ServiceProviderBase {
         $configuration->clientId,
         $configuration->brokers,
         $configuration->destination,
-        $configuration->user,
-        $configuration->pass,
+        $configuration->login,
+        $configuration->passcode,
         $configuration->heartbeat,
       ]);
       $connectionService->setPublic(TRUE);
-      $container->setDefinition('stomp.connection.' . $key, $connectionService);
+      $container->setDefinition('stomp.configuration.' . $key, $connectionService);
 
-      $stompFactory = new Definition(StompFactory::class, [
-        new Reference('stomp.connection.' . $key),
+      $stompClient = new Definition(StompFactory::class, [
+        new Reference('stomp.configuration.' . $key),
       ]);
-      $stompFactory->setFactory([new Reference('stomp.factory'), 'create']);
+      $stompClient->setFactory([new Reference('stomp.factory'), 'create']);
 
       $queue = new Definition(Stomp::class, [
-        $stompFactory,
+        $stompClient,
         new Reference('event_dispatcher'),
         new Reference('logger.channel.stomp'),
         $configuration->destination,

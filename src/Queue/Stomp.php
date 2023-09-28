@@ -52,7 +52,7 @@ final class Stomp implements ReliableQueueInterface {
   }
 
   /**
-   * Initializes a "durable" connection to STOMP service.
+   * Initializes a durable connection to STOMP service.
    *
    * @return \Stomp\Broker\ActiveMq\Mode\DurableSubscription
    *   The Durable subscription.
@@ -87,19 +87,11 @@ final class Stomp implements ReliableQueueInterface {
   /**
    * {@inheritdoc}
    */
-  public function numberOfItems() : int {
-    // Stomp does not provide a way to count the number of items
-    // in a queue.
-    return 0;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function claimItem($lease_time = 3600) : object|false {
     try {
       $message = $this->connect()->read();
-
+      // The 'drush queue:run' command expects an object with
+      // item_id and data.
       return (object) [
         'item_id' => $message ? $message->getMessageId() : NULL,
         'data' => $message,
@@ -139,13 +131,27 @@ final class Stomp implements ReliableQueueInterface {
   /**
    * {@inheritdoc}
    */
+  public function numberOfItems() : int {
+    // Stomp does not provide a way to count the number of items
+    // in a queue.
+    return 0;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function createQueue() : void {
+    // STOMP queues are created on demand, so the first time an item is created
+    // for a queue which does not exist, then it will be created within the
+    // destination broker.
   }
 
   /**
    * {@inheritdoc}
    */
   public function deleteQueue() : void {
+    // STOMP does not provide a mechanism to delete queues from the source
+    // broker.
   }
 
 }

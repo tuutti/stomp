@@ -19,6 +19,7 @@ jobs:
             php-version: '8.1'
     container:
       image: ghcr.io/city-of-helsinki/drupal-php-docker:${{ matrix.php-version }}-alpine
+
     services:
       artemis:
         image: apache/activemq-artemis:latest-alpine

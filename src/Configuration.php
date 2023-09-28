@@ -20,9 +20,9 @@ final class Configuration {
    *   The brokers.
    * @param string $destination
    *   The queue destination.
-   * @param string|null $user
+   * @param string|null $login
    *   The username.
-   * @param string|null $pass
+   * @param string|null $passcode
    *   The password.
    * @param array $heartbeat
    *   The heartbeat configuration.
@@ -31,8 +31,8 @@ final class Configuration {
     public readonly string $clientId,
     public readonly string $brokers,
     public readonly string $destination = '/queue/default',
-    public readonly ?string $user = NULL,
-    public readonly ?string $pass = NULL,
+    public readonly ?string $login = NULL,
+    public readonly ?string $passcode = NULL,
     public readonly array $heartbeat = [
       'send' => 3000,
       'readTimeout' => ['microseconds' => 1500000],

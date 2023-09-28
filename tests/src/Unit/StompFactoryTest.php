@@ -18,7 +18,8 @@ class StompFactoryTest extends UnitTestCase {
    * Tests factory callback.
    */
   public function testCreate() : void {
-    $connection = new Configuration('client', 'tcp://127.0.0.1:1234', user: 'user1', pass: 'pass1');
+    $connection = new Configuration('client', 'tcp://127.0.0.1:1234', login: 'user1',
+      passcode: 'pass1');
     $client = (new StompFactory())
       ->create($connection);
 
