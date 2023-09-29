@@ -8,6 +8,7 @@ use Drupal\stomp\Configuration;
 use Drupal\stomp\StompFactory;
 use Drupal\Tests\UnitTestCase;
 use Stomp\Network\Observer\HeartbeatEmitter;
+use Stomp\Network\Observer\ServerAliveObserver;
 
 /**
  * Tests service provider.
@@ -31,18 +32,33 @@ class StompFactoryTest extends UnitTestCase {
     $this->assertEquals('pass1', $reflection->getProperty('passcode')->getValue($client));
 
     $observers = $client->getConnection()->getObservers()->getObservers();
+    $this->assertEmpty($observers);
+  }
+
+  /**
+   * Tests client side heartbeat observer.
+   */
+  public function testHeartbeatEmitter() : void {
+    $connection = new Configuration('client', 'tcp://127.0.0.1:1234', heartbeat: [
+      'send' => 1500,
+    ]);
+    $client = (new StompFactory())
+      ->create($connection);
+    $observers = $client->getConnection()->getObservers()->getObservers();
     $this->assertInstanceOf(HeartbeatEmitter::class, $observers[0]);
   }
 
   /**
-   * Tests that heartbeat can be disabled.
+   * Tests server side heartbeat observer.
    */
-  public function testNoHeartbeat() : void {
-    $connection = new Configuration('client', 'tcp://127.0.0.1:1234', heartbeat: []);
+  public function testHeartbeatServerAliveObserver() : void {
+    $connection = new Configuration('client', 'tcp://127.0.0.1:1234', heartbeat: [
+      'receive' => 1500,
+    ]);
     $client = (new StompFactory())
       ->create($connection);
     $observers = $client->getConnection()->getObservers()->getObservers();
-    $this->assertEmpty($observers);
+    $this->assertInstanceOf(ServerAliveObserver::class, $observers[0]);
   }
 
 }

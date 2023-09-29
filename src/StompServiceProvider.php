@@ -36,6 +36,7 @@ final class StompServiceProvider extends ServiceProviderBase {
         $configuration->login,
         $configuration->passcode,
         $configuration->heartbeat,
+        $configuration->timeout,
       ]);
       $connectionService->setPublic(TRUE);
       $container->setDefinition('stomp.configuration.' . $key, $connectionService);

@@ -25,7 +25,15 @@ final class Configuration {
    * @param string|null $passcode
    *   The password.
    * @param array $heartbeat
-   *   The heartbeat configuration.
+   *   The heartbeat configuration. Available settings are 'send' and
+   *   'receive'. The value should be an integer in milliseconds.
+   *
+   *   For example ['send' => 3000, 'receive' => 0].
+   * @param array $timeout
+   *   The timeout. Available settings are 'read' and 'write'.
+   *   The value should be an integer in milliseconds.
+   *
+   *   For example ['read' => 1500, 'write' => 1500].
    */
   public function __construct(
     public readonly string $clientId,
@@ -33,18 +41,12 @@ final class Configuration {
     public readonly string $destination = '/queue/default',
     public readonly ?string $login = NULL,
     public readonly ?string $passcode = NULL,
-    public readonly array $heartbeat = [
-      'send' => 3000,
-      'readTimeout' => ['microseconds' => 1500000],
-    ],
-  ) {
+    public readonly array $heartbeat = [],
+    public readonly array $timeout = [
+      'write' => 1500,
+      'read' => 1500,
+    ]) {
     Assert::regex($this->destination, '/^(\/topic\/|\/queue\/)/');
-
-    if ($this->heartbeat) {
-      Assert::keyExists($this->heartbeat, 'send');
-      Assert::keyExists($this->heartbeat, 'readTimeout');
-      Assert::keyExists($this->heartbeat['readTimeout'], 'microseconds');
-    }
   }
 
 }

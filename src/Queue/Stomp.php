@@ -71,8 +71,6 @@ final class Stomp implements ReliableQueueInterface {
 
     try {
       $this->connect();
-      $event->message->addHeaders(['persistent' => 'true']);
-
       return $this->stompClient->send($this->destination, $event->message);
     }
     catch (StompException $e) {
@@ -90,10 +88,14 @@ final class Stomp implements ReliableQueueInterface {
   public function claimItem($lease_time = 3600) : object|false {
     try {
       $message = $this->connect()->read();
+
+      if (!$message instanceof Frame) {
+        return FALSE;
+      }
       // The 'drush queue:run' command expects an object with
       // item_id and data.
       return (object) [
-        'item_id' => $message ? $message->getMessageId() : NULL,
+        'item_id' => $message->getMessageId(),
         'data' => $message,
       ];
     }
@@ -120,11 +122,8 @@ final class Stomp implements ReliableQueueInterface {
    * {@inheritdoc}
    */
   public function releaseItem($item) : bool {
-    if (!$item->data instanceof Frame) {
-      return FALSE;
-    }
-    $this->connect()->nack($item->data);
-
+    // STOMP does not support redelivering items. The item is redelivered
+    // if it's not ACK'd.
     return TRUE;
   }
 

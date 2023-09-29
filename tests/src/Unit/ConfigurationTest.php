@@ -37,7 +37,6 @@ class ConfigurationTest extends UnitTestCase {
       '/topic/test',
       login: 'user1',
       passcode: 'pass1',
-      heartbeat: [],
     ));
     $this->assertProps(new Configuration(
       'client',
@@ -45,42 +44,9 @@ class ConfigurationTest extends UnitTestCase {
       '/queue/test',
       login: 'user1',
       passcode: 'pass1',
-      heartbeat: ['send' => 1, 'readTimeout' => ['microseconds' => 250]],
+      heartbeat: ['send' => 1, 'receive' => 1],
+      timeout: ['write' => 1, 'read' => 1],
     ));
-  }
-
-  /**
-   * Tests the hearbeat setting.
-   *
-   * @dataProvider heartbeatData
-   */
-  public function testHeartbeat(array $heartbeat, string $expectedMessage) : void {
-    $this->expectException(\InvalidArgumentException::class);
-    $this->expectExceptionMessage($expectedMessage);
-    new Configuration('client1', '', heartbeat: $heartbeat);
-  }
-
-  /**
-   * A data provider.
-   *
-   * @return array[]
-   *   The data.
-   */
-  public function heartbeatData() : array {
-    return [
-      [
-        ['readTimeout' => []],
-        'Expected the key "send" to exist.',
-      ],
-      [
-        ['send' => 0],
-        'Expected the key "readTimeout" to exist.',
-      ],
-      [
-        ['send' => 0, 'readTimeout' => []],
-        'Expected the key "microseconds" to exist.',
-      ],
-    ];
   }
 
   /**

@@ -45,6 +45,15 @@ $settings['stomp']['default']['login'] = 'username';
 $settings['stomp']['default']['passcode'] = 'password';
 ```
 
+### Timeout
+
+```php
+$settings['stomp']['default']['timeout'] = [
+  'read' => 1500, // Milliseconds.
+  'write' => 1500, // Milliseconds.
+]
+```
+
 ### Heartbeat
 
 To disable heartbeat, set `heartbeat` setting to an empty array:
@@ -52,17 +61,56 @@ To disable heartbeat, set `heartbeat` setting to an empty array:
 $settings['stomp']['default']['heartbeat'] = [];
 ```
 
+Please note that the items *MUST* be processed faster than the heartbeat defined here.
+
 To modify heartbeat timeouts:
 ```php
 $settings['stomp']['default']['heartbeat'] = [
   // Signals the server that we're going to send
   // alive signals within an interval of 3000ms.
   'send' => 3000,
-  // We must assure that we'll send data within less
-  // than 500ms so our read timeout must be lower
-  // as well (1500000  = 1500ms).
-  'readTimeout' => ['microseconds' => 1500000],
 ];
+// We must assure that we'll send data within less
+// than 3000ms so our read timeout must be lower
+// as well (1500ms).
+$settings['stomp']['default']['timeout'] = [
+  'read' => 1500,
+]
+```
+
+
+## Running tests
+
+Tests can be run just like any other tests. For example:
+
+```bash
+vendor/bin/phpunit modules/contrib/stomp/tests
+```
+
+### Artemis
+
+The host, username and password should be `artemis`.
+
+You can use the default Docker image provided by Apache with something like this:
+
+```yaml
+# docker-compose.yml
+services:
+  artemis:
+    image: apache/activemq-artemis:latest-alpine
+    networks:
+      - internal
+```
+
+Make sure Artemis queues are empty before running tests:
+
+```bash
+foreach item (first second third)
+  docker compose exec artemis bin/artemis queue purge \
+    --user artemis \
+    --password artemis \
+    --name test./queue/$item;
+end
 ```
 
 
