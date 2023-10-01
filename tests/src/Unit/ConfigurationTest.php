@@ -6,6 +6,7 @@ namespace Drupal\Tests\stomp\Unit;
 
 use Drupal\stomp\Configuration;
 use Drupal\Tests\UnitTestCase;
+use Stomp\Network\Observer\HeartbeatEmitter;
 
 /**
  * Tests Connection data object.
@@ -44,9 +45,90 @@ class ConfigurationTest extends UnitTestCase {
       '/queue/test',
       login: 'user1',
       passcode: 'pass1',
-      heartbeat: ['send' => 1, 'receive' => 1],
+      heartbeat: [
+        'send' => 1,
+        'receive' => 1,
+        'observers' => [
+          [
+            'class' => HeartbeatEmitter::class,
+          ],
+        ],
+      ],
       timeout: ['write' => 1, 'read' => 1],
     ));
+  }
+
+  /**
+   * Tests heartbeat configuration validation.
+   *
+   * @dataProvider heartbeatExceptionData
+   */
+  public function testHeartbeatException(array $heartbeat, string $exceptionMessage) : void {
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessageMatches($exceptionMessage);
+    new Configuration(
+      'client',
+      'tcp://127.0.0.1:1234',
+      '/queue/test',
+      login: 'user1',
+      passcode: 'pass1',
+      heartbeat: $heartbeat,
+      timeout: ['write' => 1, 'read' => 1],
+    );
+  }
+
+  /**
+   * A data provider.
+   *
+   * @return array[]
+   *   The data.
+   */
+  public function heartbeatExceptionData() : array {
+    return [
+      [
+        [
+          'send' => 3000,
+        ],
+        '/Missing required "observers" heartbeat setting./',
+      ],
+      [
+        [
+          'observers' => 1,
+        ],
+        '/Expected an array. Got:/',
+      ],
+      [
+        [
+          'observers' => [
+            [
+              'dsa' => '',
+            ],
+          ],
+        ],
+        '/Expected the key "class" to exist./',
+      ],
+      [
+        [
+          'observers' => [
+            [
+              'class' => 'InvalidClass',
+            ],
+          ],
+        ],
+        '/Expected an existing class name. Got:/',
+      ],
+      [
+        [
+          'observers' => [
+            [
+              'class' => HeartbeatEmitter::class,
+              'callback' => 'string',
+            ],
+          ],
+        ],
+        '/Expected a callable. Got:/',
+      ],
+    ];
   }
 
   /**

@@ -41,6 +41,11 @@ class StompFactoryTest extends UnitTestCase {
   public function testHeartbeatEmitter() : void {
     $connection = new Configuration('client', 'tcp://127.0.0.1:1234', heartbeat: [
       'send' => 1500,
+      'observers' => [
+        [
+          'class' => HeartbeatEmitter::class,
+        ],
+      ],
     ]);
     $client = (new StompFactory())
       ->create($connection);
@@ -54,11 +59,51 @@ class StompFactoryTest extends UnitTestCase {
   public function testHeartbeatServerAliveObserver() : void {
     $connection = new Configuration('client', 'tcp://127.0.0.1:1234', heartbeat: [
       'receive' => 1500,
+      'observers' => [
+        [
+          'class' => ServerAliveObserver::class,
+        ],
+      ],
     ]);
     $client = (new StompFactory())
       ->create($connection);
     $observers = $client->getConnection()->getObservers()->getObservers();
     $this->assertInstanceOf(ServerAliveObserver::class, $observers[0]);
+  }
+
+  /**
+   * Tests heartbeat observer without known default callback.
+   */
+  public function testHeartbeatObserverNoDefaultCallback() : void {
+    $connection = new Configuration('client', 'tcp://127.0.0.1:1234', heartbeat: [
+      'receive' => 1500,
+      'observers' => [
+        [
+          'class' => Configuration::class,
+        ],
+      ],
+    ]);
+    $this->expectException(\LogicException::class);
+    $this->expectExceptionMessage('No default callback found.');
+    (new StompFactory())->create($connection);
+  }
+
+  /**
+   * Tests heartbeat observer callback with invalid return value.
+   */
+  public function testHeartbeatObserverInvalidInstanceOf() : void {
+    $connection = new Configuration('client', 'tcp://127.0.0.1:1234', heartbeat: [
+      'receive' => 1500,
+      'observers' => [
+        [
+          'class' => Configuration::class,
+          'callback' => fn() => new \stdClass(),
+        ],
+      ],
+    ]);
+    $this->expectException(\LogicException::class);
+    $this->expectExceptionMessageMatches('/The observer must be an instance of/');
+    (new StompFactory())->create($connection);
   }
 
 }

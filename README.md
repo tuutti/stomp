@@ -4,7 +4,7 @@
 
 This module integrates Drupal with an external STOMP or AMQP message queue, such as ActiveMQ.
 
-## Installation
+## Configuration
 
 You must configure STOMP queues as part of the `$settings` global variable. For example:
 
@@ -19,9 +19,7 @@ $settings['stomp']['default'] = [
 ];
 ```
 
-## Configuration
-
-Configure STOMP as the queuing system for the queues you want STOMP to maintain, either as the default queue service, default reliable queue service, or specifically for each queue.
+Then configure STOMP as the queuing system for the queues you want STOMP to maintain, either as the default queue service, default reliable queue service, or specifically for each queue.
 
 If you want to set STOMP as the default queue manager, then add the following to your settings:
 
@@ -56,19 +54,22 @@ $settings['stomp']['default']['timeout'] = [
 
 ### Heartbeat
 
-To disable heartbeat, set `heartbeat` setting to an empty array:
-```php
-$settings['stomp']['default']['heartbeat'] = [];
-```
+Heartbeat is disabled by default. The [stomp-php/stomp-php](https://github.com/stomp-php/stomp-php) library supports client and server side heartbeat.
+
+#### Client side heartbeat
 
 Please note that the items *MUST* be processed faster than the heartbeat defined here.
 
-To modify heartbeat timeouts:
 ```php
 $settings['stomp']['default']['heartbeat'] = [
   // Signals the server that we're going to send
   // alive signals within an interval of 3000ms.
   'send' => 3000,
+  'observers' => [
+    [
+      'class' => 'Stomp\Network\Observer\HeartbeatEmitter',
+    ],
+  ],
 ];
 // We must assure that we'll send data within less
 // than 3000ms so our read timeout must be lower
@@ -78,6 +79,39 @@ $settings['stomp']['default']['timeout'] = [
 ]
 ```
 
+See [stomp-php/stomp-php-examples](https://github.com/stomp-php/stomp-php-examples/blob/support/version-4/src/heartbeats_client.php) for more information.
+
+#### Server side heartbeat
+
+```php
+$settings['stomp']['default']['heartbeat'] = [
+  'send' => 0,
+  // We want the server to send us signals every 3000ms.
+  'receive' => 3000,
+  'observers' => [
+    [
+      'class' => 'Stomp\Network\Observer\ServerAliveObserver',
+    ],
+  ],
+];
+```
+
+See [stomp-php/stomp-php-examples](https://github.com/stomp-php/stomp-php-examples/blob/support/version-4/src/heartbeats_server.php) for more information.
+
+#### Custom heartbeat
+
+```php
+$settings['stomp']['default']['heartbeat'] = [
+  'observers' => [
+    [
+      'class' => 'YourCustomClass',
+      'callback' => function (\Stomp\Client $client, \Drupal\stomp\Configuration $configuration, array $settings) : \Stomp\Network\Observer\ConnectionObserver {
+         return new YourCustomClass();
+      }
+    ],
+  ],
+];
+```
 
 ## Running tests
 

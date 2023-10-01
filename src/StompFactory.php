@@ -5,6 +5,7 @@ declare(strict_types = 1);
 namespace Drupal\stomp;
 
 use Stomp\Client;
+use Stomp\Network\Observer\ConnectionObserver;
 use Stomp\Network\Observer\HeartbeatEmitter;
 use Stomp\Network\Observer\ServerAliveObserver;
 
@@ -16,46 +17,84 @@ final class StompFactory {
   /**
    * Constructs a new STOMP client.
    *
-   * @param \Drupal\stomp\Configuration $connection
+   * @param \Drupal\stomp\Configuration $configuration
    *   The connection parameters.
    *
    * @return \Stomp\Client
    *   The STOMP client.
    */
-  public function create(Configuration $connection) : Client {
-    $client = (new Client($connection->brokers))
-      ->setClientId($connection->clientId);
+  public function create(Configuration $configuration) : Client {
+    $client = (new Client($configuration->brokers))
+      ->setClientId($configuration->clientId);
 
-    if ($connection->login) {
-      $client->setLogin($connection->login, $connection->passcode);
+    if ($configuration->login) {
+      $client->setLogin($configuration->login, $configuration->passcode);
     }
     $clientConnection = $client->getConnection();
 
-    if ($connection->heartbeat) {
-      $send = $connection->heartbeat['send'] ?? 0;
-      $receive = $connection->heartbeat['receive'] ?? 0;
-
-      $client->setHeartbeat($send, $receive);
-
-      $observer = $send > 0 ?
-        new HeartbeatEmitter($clientConnection) :
-        new ServerAliveObserver();
-
-      $clientConnection->getObservers()->addObserver($observer);
-    }
-
-    if (isset($connection->timeout['read'])) {
-      $readTimeout = $connection->timeout['read'];
+    if (isset($configuration->timeout['read'])) {
+      $readTimeout = $configuration->timeout['read'];
 
       $seconds = ($readTimeout - ($readTimeout % 1000)) / 1000;
       $microseconds = ($readTimeout % 1000) * 1000;
       $clientConnection->setReadTimeout($seconds, $microseconds);
     }
 
-    if (isset($connection->timeout['write'])) {
-      $clientConnection->setWriteTimeout($connection->timeout['write']);
+    if (isset($configuration->timeout['write'])) {
+      $clientConnection->setWriteTimeout($configuration->timeout['write']);
     }
+
+    if ($configuration->heartbeat) {
+      $this->setHeartbeat($client, $configuration);
+    }
+
     return $client;
+  }
+
+  /**
+   * Configures the heartbeat.
+   *
+   * @param \Stomp\Client $client
+   *   The client.
+   * @param \Drupal\stomp\Configuration $configuration
+   *   The configuration.
+   */
+  private function setHeartbeat(Client $client, Configuration $configuration) : void {
+    $client->setHeartbeat(
+      $configuration->heartbeat['send'] ?? 0,
+      $configuration->heartbeat['receive'] ?? 0,
+    );
+
+    $defaultCallbacks = [
+      HeartbeatEmitter::class => fn(Client $client) : HeartbeatEmitter => new HeartbeatEmitter($client->getConnection()),
+      ServerAliveObserver::class => fn() : ServerAliveObserver => new ServerAliveObserver(),
+    ];
+
+    foreach ($configuration->heartbeat['observers'] as $settings) {
+      $settings['callback'] ??= NULL;
+
+      [
+        'callback' => $callback,
+        'class' => $class,
+      ] = $settings;
+
+      $class = ltrim($class, '\\');
+
+      if (!is_callable($callback)) {
+        if (!isset($defaultCallbacks[$class])) {
+          throw new \LogicException('No default callback found.');
+        }
+        $callback = $defaultCallbacks[$class];
+      }
+      $observer = $callback($client, $configuration, $settings);
+
+      if (!$observer instanceof ConnectionObserver) {
+        throw new \LogicException(
+          sprintf('The observer must be an instance of "%s".', ConnectionObserver::class)
+        );
+      }
+      $client->getConnection()->getObservers()->addObserver($observer);
+    }
   }
 
 }

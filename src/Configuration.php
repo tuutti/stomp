@@ -25,15 +25,9 @@ final class Configuration {
    * @param string|null $passcode
    *   The password.
    * @param array $heartbeat
-   *   The heartbeat configuration. Available settings are 'send' and
-   *   'receive'. The value should be an integer in milliseconds.
-   *
-   *   For example ['send' => 3000, 'receive' => 0].
+   *   The heartbeat configuration.
    * @param array $timeout
-   *   The timeout. Available settings are 'read' and 'write'.
-   *   The value should be an integer in milliseconds.
-   *
-   *   For example ['read' => 1500, 'write' => 1500].
+   *   The timeout configuration.
    */
   public function __construct(
     public readonly string $clientId,
@@ -43,10 +37,34 @@ final class Configuration {
     public readonly ?string $passcode = NULL,
     public readonly array $heartbeat = [],
     public readonly array $timeout = [
-      'write' => 1500,
+      'write' => 0,
       'read' => 1500,
     ]) {
     Assert::regex($this->destination, '/^(\/topic\/|\/queue\/)/');
+    $this->assertHeartbeat();
+  }
+
+  /**
+   * Asserts the heartbeat configuration.
+   */
+  private function assertHeartbeat() : void {
+    if (!$this->heartbeat) {
+      return;
+    }
+
+    if (empty($this->heartbeat['observers'])) {
+      throw new \InvalidArgumentException('Missing required "observers" heartbeat setting.');
+    }
+    Assert::isArray($this->heartbeat['observers']);
+
+    foreach ($this->heartbeat['observers'] as $observer) {
+      Assert::keyExists($observer, 'class');
+      Assert::classExists($observer['class']);
+
+      if (isset($observer['callback'])) {
+        Assert::isCallable($observer['callback']);
+      }
+    }
   }
 
 }

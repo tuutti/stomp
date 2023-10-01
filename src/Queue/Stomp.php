@@ -89,13 +89,10 @@ final class Stomp implements ReliableQueueInterface {
     try {
       $message = $this->connect()->read();
 
-      if (!$message instanceof Frame) {
-        return FALSE;
-      }
       // The 'drush queue:run' command expects an object with
       // item_id and data.
       return (object) [
-        'item_id' => $message->getMessageId(),
+        'item_id' => $message ? $message->getMessageId() : NULL,
         'data' => $message,
       ];
     }
