@@ -113,6 +113,40 @@ $settings['stomp']['default']['heartbeat'] = [
 ];
 ```
 
+### Persist messages
+
+STOMP messages are non-persistent by default. To use persistent messaging, add the following STOMP header to requests: persistent:true.
+
+This can be done by creating an event subscriber that responds to `\Drupal\stomp\Event\MessageEvent::class` events:
+
+```php
+class YourEventSubscriber implements \Symfony\Component\EventDispatcher\EventSubscriberInterface {
+
+  /**
+   * Event callback.
+   *
+   * @param \Drupal\stomp\Event\MessageEvent $event
+   *   The event.
+   */
+  public function processEvent(\Drupal\stomp\Event\MessageEvent $event): void {
+    $event->message->addHeaders([
+      'persistent' => 'true',
+    ]);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getSubscribedEvents() : array {
+    return [
+      \Drupal\stomp\Event\MessageEvent::class => ['processEvent'],
+    ];
+  }
+}
+```
+
+See https://www.drupal.org/docs/develop/creating-modules/subscribe-to-and-dispatch-events for more information about events.
+
 ## Running tests
 
 Tests can be run just like any other tests. For example:

@@ -11,6 +11,8 @@ use Drupal\Tests\UnitTestCase;
 
 /**
  * Tests service provider.
+ *
+ * @group stomp
  */
 class ServiceProviderTest extends UnitTestCase {
 

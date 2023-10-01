@@ -12,6 +12,8 @@ use Stomp\Network\Observer\ServerAliveObserver;
 
 /**
  * Tests service provider.
+ *
+ * @group stomp
  */
 class StompFactoryTest extends UnitTestCase {
 

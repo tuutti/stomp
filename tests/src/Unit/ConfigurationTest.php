@@ -10,6 +10,8 @@ use Stomp\Network\Observer\HeartbeatEmitter;
 
 /**
  * Tests Connection data object.
+ *
+ * @group stomp
  */
 class ConfigurationTest extends UnitTestCase {
 
