@@ -49,7 +49,7 @@ $settings['stomp']['default']['passcode'] = 'password';
 $settings['stomp']['default']['timeout'] = [
   'read' => 1500, // Milliseconds.
   'write' => 1500, // Milliseconds.
-]
+];
 ```
 
 ### Heartbeat
@@ -76,7 +76,7 @@ $settings['stomp']['default']['heartbeat'] = [
 // as well (1500ms).
 $settings['stomp']['default']['timeout'] = [
   'read' => 1500,
-]
+];
 ```
 
 See [stomp-php/stomp-php-examples](https://github.com/stomp-php/stomp-php-examples/blob/support/version-4/src/heartbeats_client.php) for more information.
