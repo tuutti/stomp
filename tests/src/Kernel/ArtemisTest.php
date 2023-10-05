@@ -4,8 +4,6 @@ declare(strict_types = 1);
 
 namespace Drupal\Tests\stomp\Kernel;
 
-use Stomp\Transport\Message;
-
 /**
  * Tests queue with artemis.
  *
@@ -25,6 +23,15 @@ class ArtemisTest extends QueueTestBase {
         'passcode' => 'artemis',
         'brokers' => 'tcp://artemis:61613',
         'timeout' => ['read' => 500],
+        'heartbeat' => [
+          'send' => 1000,
+          'receive' => 0,
+          'observers' => [
+            [
+              'class' => '\Stomp\Network\Observer\HeartbeatEmitter',
+            ],
+          ],
+        ],
       ],
       'second' => [
         'clientId' => 'test',
@@ -68,15 +75,15 @@ class ArtemisTest extends QueueTestBase {
     $sut->createQueue();
     $sut->deleteQueue();
     $data = 'test ' . $queueName;
-    $this->assertTrue($sut->createItem(new Message('test ' . $queueName)));
+    $this->assertTrue($sut->createItem('test ' . $queueName));
     // Stomp provides no way to count the number of items. Make sure it
     // returns zero items.
     $this->assertEquals(0, $sut->numberOfItems());
 
     $message = $sut->claimItem();
-    $headers = $message->data->getHeaders();
+    $headers = $message->message->getHeaders();
     $this->assertEquals('false', $headers['redelivered']);
-    $this->assertEquals($data, $message->data->getBody());
+    $this->assertEquals($data, $message->message->getBody());
     $this->assertTrue($sut->releaseItem($message));
   }
 
@@ -88,12 +95,12 @@ class ArtemisTest extends QueueTestBase {
   public function testQueueAck(string $expectedQueue, string $queueName) : void {
     $sut = $this->getSut($queueName);
     $message = $sut->claimItem();
-    $headers = $message->data->getHeaders();
+    $headers = $message->message->getHeaders();
 
     $this->assertEquals('true', $headers['redelivered']);
     $this->assertEquals($expectedQueue, $headers['destination']);
     $this->assertEquals($expectedQueue, $headers['subscription']);
-    $this->assertEquals('test ' . $queueName, $message->data->getBody());
+    $this->assertEquals('test ' . $queueName, $message->message->getBody());
     $sut->deleteItem($message);
   }
 
