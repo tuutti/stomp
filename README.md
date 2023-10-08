@@ -167,10 +167,6 @@ Run Artemis using Docker compose:
 services:
   artemis:
     image: quay.io/artemiscloud/activemq-artemis-broker
-    ports:
-      - "8161:8161"
-      - "61616:61616"
-      - "5672:5672"
     environment:
       AMQ_EXTRA_ARGS: "--nio --user admin --password admin"
 ```
