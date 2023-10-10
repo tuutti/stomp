@@ -1,6 +1,6 @@
 # STOMP
 
-![CI](https://github.com/tuutti/stomp/workflows/CI/badge.svg) [![codecov](https://codecov.io/gh/City-of-Helsinki/drupal-module-stomp/graph/badge.svg?token=0B2TNXYU14)](https://codecov.io/gh/City-of-Helsinki/drupal-module-stomp)
+![CI](https://github.com/tuutti/stomp/workflows/CI/badge.svg) [![codecov](https://codecov.io/gh/tuutti/stomp/graph/badge.svg?token=mBuYzjoKfn)](https://codecov.io/gh/tuutti/stomp)
 
 This module integrates Drupal with an external STOMP or AMQP message queue, such as ActiveMQ.
 
