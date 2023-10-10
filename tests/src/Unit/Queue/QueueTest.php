@@ -94,7 +94,7 @@ class QueueTest extends UnitTestCase {
     $subscription->activate()->shouldBeCalled();
 
     $sut = $this->getSut($client->reveal(), $subscription->reveal());
-    $this->assertTrue($sut->createItem('123'));
+    $this->assertEquals(1, $sut->createItem('123'));
   }
 
   /**

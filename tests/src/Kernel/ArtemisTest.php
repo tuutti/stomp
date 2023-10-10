@@ -75,7 +75,7 @@ class ArtemisTest extends QueueTestBase {
     $sut->createQueue();
     $sut->deleteQueue();
     $data = 'test ' . $queueName;
-    $this->assertTrue($sut->createItem('test ' . $queueName));
+    $this->assertEquals(1, $sut->createItem('test ' . $queueName));
     // Stomp provides no way to count the number of items. Make sure it
     // returns zero items.
     $this->assertEquals(0, $sut->numberOfItems());

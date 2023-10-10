@@ -28,6 +28,13 @@ final class Queue implements ReliableQueueInterface {
   private bool $continueReading = TRUE;
 
   /**
+   * The item ID counter.
+   *
+   * @var int
+   */
+  private int $itemId = 1;
+
+  /**
    * Constructs a new instance.
    *
    * @param \Stomp\Client $client
@@ -84,15 +91,17 @@ final class Queue implements ReliableQueueInterface {
   /**
    * {@inheritdoc}
    */
-  public function createItem($data) : bool {
+  public function createItem($data) : false|int {
     /** @var \Drupal\stomp\Event\MessageEvent $event */
     $event = $this->eventDispatcher->dispatch(MessageEvent::create($data));
 
     try {
       $this->connect();
 
-      return $this->client
+      $status = $this->client
         ->send($this->getDestination(), $event->message);
+
+      return $status ? $this->itemId++ : FALSE;
     }
     catch (StompException $e) {
       $this->logger->error('Failed to send item to %queue: @message', [
