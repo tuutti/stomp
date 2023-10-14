@@ -18,6 +18,11 @@ class MessageEventTest extends UnitTestCase {
   /**
    * Tests ::create().
    *
+   * @param mixed $body
+   *   The body.
+   * @param class-string<object> $expectedClass
+   *   The expected class.
+   *
    * @dataProvider createData
    */
   public function testCreate(mixed $body, string $expectedClass) : void {

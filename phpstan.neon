@@ -1,0 +1,11 @@
+parameters:
+	fileExtensions:
+	    - php
+	    - module
+	    - install
+	paths:
+		- ./
+	excludePaths:
+		- vendor
+	level: 9
+	checkMissingIterableValueType: false

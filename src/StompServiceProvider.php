@@ -21,7 +21,9 @@ final class StompServiceProvider extends ServiceProviderBase {
    * {@inheritdoc}
    */
   public function register(ContainerBuilder $container) : void {
+    /** @var array $settings */
     $settings = Settings::get('stomp', []);
+
     foreach ($settings as $key => $value) {
       Assert::alpha($key);
       // Definition's setArguments method doesn't support array

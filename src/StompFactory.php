@@ -27,7 +27,7 @@ final class StompFactory {
     $client = (new Client($configuration->brokers))
       ->setClientId($configuration->clientId);
 
-    if ($configuration->login) {
+    if ($configuration->login && $configuration->passcode) {
       $client->setLogin($configuration->login, $configuration->passcode);
     }
     $clientConnection = $client->getConnection();

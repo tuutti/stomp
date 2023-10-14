@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace Drupal\Tests\stomp\Unit\Queue;
 
+use Drupal\stomp\Queue\Item;
 use Drupal\Tests\stomp\Traits\QueueTrait;
 use Drupal\Tests\UnitTestCase;
 use Prophecy\Argument;
@@ -40,13 +41,13 @@ class QueueTest extends UnitTestCase {
     $client = $this->prophesize(Client::class);
     $subscription = $this->getDurableSubscription();
     $subscription->activate()->shouldBeCalled();
-    $message = new Message('test');
+    $message = new Message('test', ['message-id' => 1]);
     $subscription->ack($message)->willThrow(new StompException('message'));
     $logger = $this->prophesize(LoggerInterface::class);
     $logger->error('Failed to ACK message from /queue/test: message')
       ->shouldBeCalled();
     $sut = $this->getQueue($client->reveal(), $subscription->reveal(), $logger->reveal());
-    $sut->deleteItem((object) ['message' => new Message('test')]);
+    $sut->deleteItem($sut->toItem($message));
   }
 
   /**
@@ -111,6 +112,7 @@ class QueueTest extends UnitTestCase {
     $sut = $this->getQueue($client->reveal(), $subscription->reveal());
 
     $message = $sut->claimItem();
+    $this->assertInstanceOf(Item::class, $message);
     $this->assertEquals($expectedMessage, $message->data);
   }
 
