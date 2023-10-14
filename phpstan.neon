@@ -9,3 +9,4 @@ parameters:
 		- vendor
 	level: 9
 	checkMissingIterableValueType: false
+	treatPhpDocTypesAsCertain: false
