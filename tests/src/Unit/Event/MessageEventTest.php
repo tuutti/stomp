@@ -31,6 +31,15 @@ class MessageEventTest extends UnitTestCase {
   }
 
   /**
+   * Tests an invalid message type.
+   */
+  public function testException() : void {
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage('Invalid message type.');
+    $sut = MessageEvent::create(new \stdClass());
+  }
+
+  /**
    * Test data for message event.
    *
    * @return array

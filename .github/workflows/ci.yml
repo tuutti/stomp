@@ -80,6 +80,11 @@ jobs:
           # line coverage.
           cp -r $GITHUB_WORKSPACE/.git $MODULE_FOLDER/
 
+      - name: Run PHPStan
+        working-directory: ${{ env.DRUPAL_ROOT }}
+        run: |
+          vendor/bin/phpstan analyze -c $MODULE_FOLDER/phpstan.neon $MODULE_FOLDER
+
       - name: Run PHPCS
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
