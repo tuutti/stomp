@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace Drupal\stomp\Queue;
 
+use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Core\Queue\ReliableQueueInterface;
 use Drupal\stomp\Event\MessageEvent;
 use Psr\Log\LoggerInterface;
@@ -87,10 +88,10 @@ final class Queue implements ReliableQueueInterface {
       return $status ? $this->itemId++ : FALSE;
     }
     catch (StompException $e) {
-      $this->logger->error('Failed to send item to %queue: @message', [
-        '%queue' => $this->getDestination(),
+      $this->logger->error((string) new FormattableMarkup('Failed to send item to @queue: @message', [
+        '@queue' => $this->getDestination(),
         '@message' => $e->getMessage(),
-      ]);
+      ]));
     }
     return FALSE;
   }
@@ -112,10 +113,10 @@ final class Queue implements ReliableQueueInterface {
       ];
     }
     catch (StompException $e) {
-      $this->logger->error('Failed to read item from %queue: @message', [
-        '%queue' => $this->getDestination(),
+      $this->logger->error((string) new FormattableMarkup('Failed to read item from @queue: @message', [
+        '@queue' => $this->getDestination(),
         '@message' => $e->getMessage(),
-      ]);
+      ]));
     }
     return FALSE;
   }
@@ -144,17 +145,17 @@ final class Queue implements ReliableQueueInterface {
    * {@inheritdoc}
    */
   public function deleteItem($item) : void {
-    if (!$item->message instanceof Frame) {
+    if (!isset($item->message) || !$item->message instanceof Frame) {
       return;
     }
     try {
       $this->connect()->ack($item->message);
     }
     catch (StompException $e) {
-      $this->logger->error('Failed to ACK message from %queue: @message', [
-        '%queue' => $this->getDestination(),
+      $this->logger->error((string) new FormattableMarkup('Failed to ACK message from @queue: @message', [
+        '@queue' => $this->getDestination(),
         '@message' => $e->getMessage(),
-      ]);
+      ]));
     }
   }
 

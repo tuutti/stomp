@@ -23,6 +23,33 @@ class QueueTest extends UnitTestCase {
   use QueueTrait;
 
   /**
+   * Tests delete() with invalid type.
+   */
+  public function testDeleteItemInvalidType() : void {
+    $client = $this->prophesize(Client::class);
+    $subscription = $this->getDurableSubscription();
+    $sut = $this->getQueue($client->reveal(), $subscription->reveal());
+    $sut->deleteItem(NULL);
+    $sut->deleteItem((object) ['message' => NULL]);
+  }
+
+  /**
+   * Make sure delete errors are logged.
+   */
+  public function testDeleteItemStompException() : void {
+    $client = $this->prophesize(Client::class);
+    $subscription = $this->getDurableSubscription();
+    $subscription->activate()->shouldBeCalled();
+    $message = new Message('test');
+    $subscription->ack($message)->willThrow(new StompException('message'));
+    $logger = $this->prophesize(LoggerInterface::class);
+    $logger->error('Failed to ACK message from /queue/test: message')
+      ->shouldBeCalled();
+    $sut = $this->getQueue($client->reveal(), $subscription->reveal(), $logger->reveal());
+    $sut->deleteItem((object) ['message' => new Message('test')]);
+  }
+
+  /**
    * Make sure write errors are logged.
    */
   public function testCreateItemStompException() : void {
@@ -30,9 +57,9 @@ class QueueTest extends UnitTestCase {
     $subscription = $this->getDurableSubscription();
     $subscription->activate()
       ->shouldBeCalled()
-      ->willThrow(new StompException());
+      ->willThrow(new StompException('message'));
     $logger = $this->prophesize(LoggerInterface::class);
-    $logger->error('Failed to send item to %queue: @message', Argument::any())
+    $logger->error('Failed to send item to /queue/test: message', Argument::any())
       ->shouldBeCalled();
     $sut = $this->getQueue($client->reveal(), $subscription->reveal(), $logger->reveal());
     $this->assertFalse($sut->createItem('123'));
@@ -60,10 +87,10 @@ class QueueTest extends UnitTestCase {
     $subscription = $this->getDurableSubscription();
     $subscription->activate()->shouldBeCalled();
     $subscription->read()->willThrow(
-      new StompException()
+      new StompException('message')
     );
     $logger = $this->prophesize(LoggerInterface::class);
-    $logger->error('Failed to read item from %queue: @message', Argument::any())
+    $logger->error('Failed to read item from /queue/test: message')
       ->shouldBeCalled();
     $sut = $this->getQueue($client->reveal(), $subscription->reveal(), $logger->reveal());
     $this->assertFalse($sut->claimItem());

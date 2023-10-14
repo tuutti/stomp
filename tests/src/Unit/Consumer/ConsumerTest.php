@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\stomp\Unit\Consumer;
 
-use Drupal\Component\DependencyInjection\Container;
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Core\Logger\RfcLogLevel;
 use Drupal\Core\Queue\QueueFactory;
@@ -28,17 +27,6 @@ use Stomp\Transport\Message;
 class ConsumerTest extends UnitTestCase {
 
   use QueueTrait;
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setUp(): void {
-    parent::setUp();
-
-    $container = new Container();
-    $container->set('string_translation', $this->getStringTranslationStub());
-    \Drupal::setContainer($container);
-  }
 
   /**
    * Constructs a new Consumer instance.

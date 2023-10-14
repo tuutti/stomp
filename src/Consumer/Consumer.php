@@ -12,7 +12,6 @@ use Drupal\Core\Queue\QueueWorkerInterface;
 use Drupal\Core\Queue\QueueWorkerManagerInterface;
 use Drupal\Core\Queue\RequeueException;
 use Drupal\Core\Queue\SuspendQueueException;
-use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\stomp\Exception\ConsumerException;
 use Drupal\stomp\Queue\Queue;
 use Psr\Log\LoggerInterface;
@@ -99,7 +98,7 @@ final class Consumer implements ConsumerInterface {
         $worker->processItem($item->data);
         $queue->deleteItem($item);
 
-        $this->log(RfcLogLevel::INFO, new TranslatableMarkup('Processed item @id from @name queue.', [
+        $this->log(RfcLogLevel::INFO, new FormattableMarkup('Processed item @id from @name queue.', [
           '@name' => $name,
           '@id' => $item->item_id,
         ]));
@@ -128,7 +127,7 @@ final class Consumer implements ConsumerInterface {
         $this->stopProcessing();
       }
     }
-    $this->log(RfcLogLevel::INFO, new TranslatableMarkup('Processed @count items from the @name queue.', [
+    $this->log(RfcLogLevel::INFO, new FormattableMarkup('Processed @count items from the @name queue.', [
       '@count' => $count,
       '@name' => $name,
     ]));
