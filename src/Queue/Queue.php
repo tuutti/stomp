@@ -19,7 +19,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 /**
  * A service to interact with STOMP server.
  */
-final class Queue implements ReliableQueueInterface {
+class Queue implements ReliableQueueInterface {
 
   /**
    * The item ID counter.

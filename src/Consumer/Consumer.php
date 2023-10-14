@@ -60,16 +60,16 @@ final class Consumer implements ConsumerInterface {
    *
    * @param int $logLevel
    *   The log level.
-   * @param \Drupal\Component\Render\FormattableMarkup|string $message
+   * @param string $message
    *   The log message.
-   * @param array $context
-   *   The log context.
+   * @param array $arguments
+   *   The log message arguments.
    */
-  private function log(int $logLevel, FormattableMarkup|string $message, array $context = []) : void {
+  private function log(int $logLevel, string $message, array $arguments = []) : void {
     if ($logLevel > $this->parameters['log_level']) {
       return;
     }
-    $this->logger->log($logLevel, (string) $message, $context);
+    $this->logger->log($logLevel, (string) new FormattableMarkup($message, $arguments));
   }
 
   /**
@@ -98,27 +98,27 @@ final class Consumer implements ConsumerInterface {
         $worker->processItem($item->data);
         $queue->deleteItem($item);
 
-        $this->log(RfcLogLevel::INFO, new FormattableMarkup('Processed item @id from @name queue.', [
+        $this->log(RfcLogLevel::INFO, 'Processed item @id from @name queue.', [
           '@name' => $name,
           '@id' => $item->item_id,
-        ]));
+        ]);
         $count++;
       }
       catch (RequeueException) {
         // The worker requested the task to be immediately re-queued.
         $queue->releaseItem($item);
-      }
-      catch (SuspendQueueException $e) {
-        // If the worker indicates there is a problem with the whole queue,
-        // release the item.
-        $queue->releaseItem($item);
 
-        throw new \Exception($e->getMessage(), $e->getCode(), $e);
+        $this->log(RfcLogLevel::DEBUG, 'Item @id put back on @name queue.', [
+          '@name' => $name,
+          '@id' => $item->item_id,
+        ]);
       }
       // @todo Support delay.
-      catch (\Exception $e) {
-        // In case of any other kind of exception, log it and leave the
-        // item in the queue to be processed again later.
+      catch (SuspendQueueException $e) {
+        // If the worker indicates there is a problem with the whole queue,
+        // release the item and stop processing the queue.
+        $queue->releaseItem($item);
+
         $this->log(RfcLogLevel::ERROR, $e->getMessage());
         $this->stopProcessing();
       }
@@ -127,10 +127,10 @@ final class Consumer implements ConsumerInterface {
         $this->stopProcessing();
       }
     }
-    $this->log(RfcLogLevel::INFO, new FormattableMarkup('Processed @count items from the @name queue.', [
+    $this->log(RfcLogLevel::INFO, 'Processed @count items from the @name queue.', [
       '@count' => $count,
       '@name' => $name,
-    ]));
+    ]);
   }
 
   /**

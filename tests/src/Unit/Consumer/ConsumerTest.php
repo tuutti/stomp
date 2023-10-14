@@ -9,9 +9,12 @@ use Drupal\Core\Logger\RfcLogLevel;
 use Drupal\Core\Queue\QueueFactory;
 use Drupal\Core\Queue\QueueWorkerInterface;
 use Drupal\Core\Queue\QueueWorkerManagerInterface;
+use Drupal\Core\Queue\RequeueException;
+use Drupal\Core\Queue\SuspendQueueException;
 use Drupal\stomp\Consumer\Consumer;
 use Drupal\stomp\Consumer\Options;
 use Drupal\stomp\Exception\ConsumerException;
+use Drupal\stomp\Queue\Queue;
 use Drupal\Tests\stomp\Traits\QueueTrait;
 use Drupal\Tests\UnitTestCase;
 use Prophecy\Argument;
@@ -100,8 +103,8 @@ class ConsumerTest extends UnitTestCase {
    */
   public function testLogLevelWarning() : void {
     $logger = $this->prophesize(LoggerInterface::class);
-    $logger->log(RfcLogLevel::INFO, 'Processed item 1 from test queue.', [])->shouldNotBeCalled();
-    $logger->log(RfcLogLevel::INFO, 'Processed 1 items from the test queue.', [])->shouldNotBeCalled();
+    $logger->log(RfcLogLevel::INFO, 'Processed item 1 from test queue.')->shouldNotBeCalled();
+    $logger->log(RfcLogLevel::INFO, 'Processed 1 items from the test queue.')->shouldNotBeCalled();
     $this->assertProcess($logger->reveal(), 4);
   }
 
@@ -110,8 +113,8 @@ class ConsumerTest extends UnitTestCase {
    */
   public function testLogLevelAll() : void {
     $logger = $this->prophesize(LoggerInterface::class);
-    $logger->log(RfcLogLevel::INFO, 'Processed item 1 from test queue.', [])->shouldBeCalled();
-    $logger->log(RfcLogLevel::INFO, 'Processed 1 items from the test queue.', [])->shouldBeCalled();
+    $logger->log(RfcLogLevel::INFO, 'Processed item 1 from test queue.')->shouldBeCalled();
+    $logger->log(RfcLogLevel::INFO, 'Processed 1 items from the test queue.')->shouldBeCalled();
     $this->assertProcess($logger->reveal(), 6);
     // Make sure setting log level to 0 logs all messages.
     $this->assertProcess($logger->reveal(), 0);
@@ -160,6 +163,114 @@ class ConsumerTest extends UnitTestCase {
 
     // Make sure process() slept for at least 500 milliseconds.
     $this->assertTrue(($end - $start) >= 5);
+  }
+
+  /**
+   * Make sure item can be re-queued.
+   */
+  public function testRequeueException() : void {
+    $item = (object) ['item_id' => 1, 'data' => []];
+    $queue = $this->prophesize(Queue::class);
+    $queue->claimItem(3600)
+      ->willReturn($item);
+    $queue->deleteItem($item)
+      ->shouldNotBeCalled();
+    $queue->releaseItem($item)
+      ->shouldBeCalled();
+
+    $queueFactory = $this->prophesize(QueueFactory::class);
+    $queueFactory->get('test')
+      ->willReturn($queue->reveal());
+
+    $worker = $this->prophesize(QueueWorkerInterface::class);
+    $worker->processItem($item->data)
+      ->shouldBeCalled()
+      ->willThrow(new RequeueException('message'));
+
+    $workerManager = $this->prophesize(QueueWorkerManagerInterface::class);
+    $workerManager->createInstance('test')
+      ->willReturn($worker->reveal());
+
+    $logger = $this->prophesize(LoggerInterface::class);
+    $logger->log(RfcLogLevel::DEBUG, 'Item 1 put back on test queue.');
+    $logger->log(RfcLogLevel::INFO, 'Processed 0 items from the test queue.')
+      ->shouldBeCalled();
+
+    $sut = $this->getSut($workerManager->reveal(), $queueFactory->reveal(), $logger->reveal());
+    $sut->process('test', new Options(itemLimit: 1));
+  }
+
+  /**
+   * Tests suspend queue exception.
+   */
+  public function testSuspendQueueException() : void {
+    $item = (object) ['item_id' => 1, 'data' => []];
+    $queue = $this->prophesize(Queue::class);
+    $queue->claimItem(3600)
+      ->willReturn($item);
+    $queue->deleteItem($item)
+      ->shouldNotBeCalled();
+    $queue->releaseItem($item)
+      ->shouldBeCalled();
+
+    $queueFactory = $this->prophesize(QueueFactory::class);
+    $queueFactory->get('test')
+      ->willReturn($queue->reveal());
+
+    $worker = $this->prophesize(QueueWorkerInterface::class);
+    $worker->processItem($item->data)
+      ->shouldBeCalled()
+      ->willThrow(new SuspendQueueException('message'));
+
+    $workerManager = $this->prophesize(QueueWorkerManagerInterface::class);
+    $workerManager->createInstance('test')
+      ->willReturn($worker->reveal());
+
+    $logger = $this->prophesize(LoggerInterface::class);
+    $logger->log(RfcLogLevel::ERROR, 'message')
+      ->shouldBeCalled();
+    $logger->log(RfcLogLevel::INFO, 'Processed 0 items from the test queue.')
+      ->shouldBeCalled();
+
+    $sut = $this->getSut($workerManager->reveal(), $queueFactory->reveal(), $logger->reveal());
+    $sut->process('test', new Options(itemLimit: 1));
+  }
+
+  /**
+   * Make sure items are not released if a generic exception is thrown.
+   */
+  public function testQueueException() : void {
+    $item = (object) ['item_id' => 1, 'data' => []];
+    $queue = $this->prophesize(Queue::class);
+    $queue->claimItem(3600)
+      ->willReturn($item);
+    $queue->deleteItem($item)
+      ->shouldNotBeCalled();
+    $queue->releaseItem($item)
+      ->shouldNotBeCalled();
+
+    $queueFactory = $this->prophesize(QueueFactory::class);
+    $queueFactory->get('test')
+      ->willReturn($queue->reveal());
+
+    $worker = $this->prophesize(QueueWorkerInterface::class);
+    $worker->processItem($item->data)
+      ->shouldBeCalled()
+      ->willThrow(new \Exception('message'));
+
+    $workerManager = $this->prophesize(QueueWorkerManagerInterface::class);
+    $workerManager->createInstance('test')
+      ->willReturn($worker->reveal());
+
+    $logger = $this->prophesize(LoggerInterface::class);
+    $logger->log(Argument::any(), Argument::any(), Argument::any())
+      ->shouldNotBeCalled();
+
+    $sut = $this->getSut($workerManager->reveal(), $queueFactory->reveal(), $logger->reveal());
+
+    $this->expectException(\Exception::class);
+    $this->expectExceptionMessage('message');
+    $sut->process('test', new Options(itemLimit: 1));
   }
 
 }
