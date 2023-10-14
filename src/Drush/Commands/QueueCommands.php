@@ -8,6 +8,7 @@ use Drupal\stomp\Consumer\ConsumerInterface;
 use Drupal\stomp\Consumer\Options;
 use Drush\Attributes as CLI;
 use Drush\Commands\DrushCommands;
+use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -20,8 +21,18 @@ final class QueueCommands extends DrushCommands {
    *
    * @param \Drupal\stomp\Consumer\ConsumerInterface $consumer
    *   The consumer service.
+   * @param \Symfony\Component\Console\Style\SymfonyStyle|null $io
+   *   The IO.
    */
-  public function __construct(private readonly ConsumerInterface $consumer) {
+  public function __construct(
+    private readonly ConsumerInterface $consumer,
+    SymfonyStyle $io = NULL,
+  ) {
+    parent::__construct();
+
+    if ($io) {
+      $this->io = $io;
+    }
   }
 
   /**
@@ -52,12 +63,13 @@ final class QueueCommands extends DrushCommands {
     'lease-time' => 3600,
     'items-limit' => 0,
   ]) : int {
+
     try {
       $this->consumer
         ->process($queue,
           new Options(
             lease: (int) $options['lease-time'],
-            itemLimit: $options['items-limit']
+            itemLimit: (int) $options['items-limit']
           )
         );
     }

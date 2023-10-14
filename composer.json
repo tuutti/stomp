@@ -12,6 +12,7 @@
         "drush/drush": "<11.6"
     },
     "require-dev": {
+        "drush/drush": "^11.6 || ^12",
         "dealerdirect/phpcodesniffer-composer-installer": "^0.7.0",
         "drupal/coder": "^8.3"
     }
