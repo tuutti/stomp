@@ -36,6 +36,14 @@ $settings['queue_service_{queue_name}'] = 'queue.stomp.default';
 $settings['queue_reliable_service_{queue_name}'] = 'queue.stomp.default';
 ```
 
+## Processing queues
+
+You can process queues with `drush stomp:worker {queue-name}` command.
+
+Available options:
+- `--lease-time`: The maximum number of seconds that an item remains claimed.
+- `--items-limit`: The maximum number of items allowed to run the queue.
+
 ## Customization
 
 ### Providing login credentials

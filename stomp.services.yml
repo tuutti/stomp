@@ -1,8 +1,20 @@
 parameters:
-  # The read interval in nanoseconds (100ms by default).
-  stomp.read_interval: 1000000
+  stomp:
+    # The read interval in nanoseconds (100ms by default).
+    read_interval: 1000000
+    # Log messages up to warning level. See \Drupal\Core\Logger\RfcLogLevel for
+    # available levels.
+    log_level: 4
 
 services:
+  stomp.consumer:
+    class: \Drupal\stomp\Consumer\Consumer
+    arguments:
+      - '@plugin.manager.queue_worker'
+      - '@queue'
+      - '@logger.channel.stomp'
+      - '%stomp%'
+
   stomp.factory:
     class: \Drupal\stomp\StompFactory
 

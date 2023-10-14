@@ -21,13 +21,6 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 final class Queue implements ReliableQueueInterface {
 
   /**
-   * Whether to continue processing.
-   *
-   * @var bool
-   */
-  private bool $continueReading = TRUE;
-
-  /**
    * The item ID counter.
    *
    * @var int
@@ -45,15 +38,12 @@ final class Queue implements ReliableQueueInterface {
    *   The event dispatcher.
    * @param \Psr\Log\LoggerInterface $logger
    *   The logger.
-   * @param int $readInterval
-   *   The read interval.
    */
   public function __construct(
     private readonly Client $client,
     private readonly DurableSubscription $durableSubscription,
     private readonly EventDispatcherInterface $eventDispatcher,
     private readonly LoggerInterface $logger,
-    private readonly int $readInterval,
   ) {
   }
 
@@ -79,13 +69,6 @@ final class Queue implements ReliableQueueInterface {
    */
   private function getDestination() : string {
     return $this->durableSubscription->getSubscription()->getDestination();
-  }
-
-  /**
-   * Request processing to be stopped.
-   */
-  public function stop() : void {
-    $this->continueReading = FALSE;
   }
 
   /**
@@ -116,29 +99,23 @@ final class Queue implements ReliableQueueInterface {
    * {@inheritdoc}
    */
   public function claimItem($lease_time = 3600) : object|false {
-    while ($this->continueReading) {
-      try {
-        $message = $this->connect()->read();
+    try {
+      $message = $this->connect()->read();
 
-        if (!$message instanceof Frame) {
-          if ($this->readInterval > 0) {
-            time_nanosleep(0, $this->readInterval);
-          }
-          continue;
-        }
-        return (object) [
-          'item_id' => $message->getMessageId(),
-          'message' => $message,
-          'data' => $this->decodeMessage($message),
-        ];
+      if (!$message instanceof Frame) {
+        return FALSE;
       }
-      catch (StompException $e) {
-        $this->logger->error('Failed to read item from %queue: @message', [
-          '%queue' => $this->getDestination(),
-          '@message' => $e->getMessage(),
-        ]);
-        $this->stop();
-      }
+      return (object) [
+        'item_id' => $message->getMessageId(),
+        'message' => $message,
+        'data' => $this->decodeMessage($message),
+      ];
+    }
+    catch (StompException $e) {
+      $this->logger->error('Failed to read item from %queue: @message', [
+        '%queue' => $this->getDestination(),
+        '@message' => $e->getMessage(),
+      ]);
     }
     return FALSE;
   }
