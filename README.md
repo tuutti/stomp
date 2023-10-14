@@ -31,9 +31,6 @@ Alternatively, you can also set for each queue to use STOMP using one of these f
 
 ```php
 $settings['queue_service_{queue_name}'] = 'queue.stomp.default';
-// Not supported by Drush queue:run at the moment. The service is always called with reliable=FALSE
-// argument.
-$settings['queue_reliable_service_{queue_name}'] = 'queue.stomp.default';
 ```
 
 ## Processing queues
