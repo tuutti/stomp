@@ -49,12 +49,13 @@ trait QueueTrait {
   /**
    * Gets the durable subscription prophecy.
    *
-   * @return \Prophecy\Prophecy\ObjectProphecy
+   * @return \Prophecy\Prophecy\ObjectProphecy<DurableSubscription>
    *   The object prophecy.
    */
   protected function getDurableSubscription() : ObjectProphecy {
     $subscription = $this->prophesize(DurableSubscription::class);
     $subscription->getSubscription()->willReturn(
+      // @phpstan-ignore-next-line
       new Subscription('/queue/test', NULL, 'client', '/queue/test')
     );
     return $subscription;

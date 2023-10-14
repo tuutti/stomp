@@ -32,14 +32,21 @@ final class MessageEvent extends Event {
    *
    * @return self
    *   The self.
+   *
+   * @throws \InvalidArgumentException
    */
   public static function create(mixed $body) : self {
     if ($body instanceof Message) {
       return new self($body);
     }
-    $message = is_array($body) ? new Map($body) : new Message($body);
 
-    return new self($message);
+    if (is_scalar($body)) {
+      return new self(new Message((string) $body));
+    }
+    elseif (is_array($body)) {
+      return new self(new Map($body));
+    }
+    throw new \InvalidArgumentException('Invalid message type.');
   }
 
 }

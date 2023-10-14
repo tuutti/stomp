@@ -14,6 +14,7 @@ use Drupal\Core\Queue\SuspendQueueException;
 use Drupal\stomp\Consumer\Consumer;
 use Drupal\stomp\Consumer\Options;
 use Drupal\stomp\Exception\ConsumerException;
+use Drupal\stomp\Queue\Item;
 use Drupal\stomp\Queue\Queue;
 use Drupal\Tests\stomp\Traits\QueueTrait;
 use Drupal\Tests\UnitTestCase;
@@ -169,7 +170,7 @@ class ConsumerTest extends UnitTestCase {
    * Make sure item can be re-queued.
    */
   public function testRequeueException() : void {
-    $item = (object) ['item_id' => 1, 'data' => []];
+    $item = new Item(1, [], new Message('123'));
     $queue = $this->prophesize(Queue::class);
     $queue->claimItem(3600)
       ->willReturn($item);
@@ -204,7 +205,7 @@ class ConsumerTest extends UnitTestCase {
    * Tests suspend queue exception.
    */
   public function testSuspendQueueException() : void {
-    $item = (object) ['item_id' => 1, 'data' => []];
+    $item = new Item(1, [], new Message('123'));
     $queue = $this->prophesize(Queue::class);
     $queue->claimItem(3600)
       ->willReturn($item);
@@ -240,7 +241,7 @@ class ConsumerTest extends UnitTestCase {
    * Make sure items are not released if a generic exception is thrown.
    */
   public function testQueueException() : void {
-    $item = (object) ['item_id' => 1, 'data' => []];
+    $item = new Item(1, [], new Message('123'));
     $queue = $this->prophesize(Queue::class);
     $queue->claimItem(3600)
       ->willReturn($item);

@@ -30,7 +30,9 @@ abstract class QueueTestBase extends KernelTestBase {
     foreach ($this->getQueueConfiguration() as $key => $value) {
       $this->setSetting($key, $value);
     }
-    $this->container->get('kernel')->rebuildContainer();
+    /** @var \Drupal\Core\DrupalKernel $kernel */
+    $kernel = $this->container->get('kernel');
+    $kernel->rebuildContainer();
   }
 
   /**
@@ -83,7 +85,10 @@ abstract class QueueTestBase extends KernelTestBase {
    *   The stomp service.
    */
   protected function getSut(string $queue) : Queue {
-    return $this->container->get('queue')->get($queue);
+    $queue = $this->container->get('queue')->get($queue);
+    $this->assertInstanceOf(Queue::class, $queue);
+
+    return $queue;
   }
 
 }

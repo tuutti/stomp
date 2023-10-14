@@ -18,11 +18,25 @@ class MessageEventTest extends UnitTestCase {
   /**
    * Tests ::create().
    *
+   * @param mixed $body
+   *   The body.
+   * @param class-string<object> $expectedClass
+   *   The expected class.
+   *
    * @dataProvider createData
    */
   public function testCreate(mixed $body, string $expectedClass) : void {
     $sut = MessageEvent::create($body);
     $this->assertInstanceOf($expectedClass, $sut->message);
+  }
+
+  /**
+   * Tests an invalid message type.
+   */
+  public function testException() : void {
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage('Invalid message type.');
+    $sut = MessageEvent::create(new \stdClass());
   }
 
   /**

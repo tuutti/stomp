@@ -4,6 +4,8 @@ declare(strict_types = 1);
 
 namespace Drupal\Tests\stomp\Kernel;
 
+use Drupal\stomp\Queue\Item;
+
 /**
  * Tests queue with artemis.
  *
@@ -81,6 +83,7 @@ class ArtemisTest extends QueueTestBase {
     $this->assertEquals(0, $sut->numberOfItems());
 
     $message = $sut->claimItem();
+    $this->assertInstanceOf(Item::class, $message);
     $headers = $message->message->getHeaders();
     $this->assertEquals('false', $headers['redelivered']);
     $this->assertEquals($data, $message->message->getBody());
@@ -95,6 +98,7 @@ class ArtemisTest extends QueueTestBase {
   public function testQueueAck(string $expectedQueue, string $queueName) : void {
     $sut = $this->getSut($queueName);
     $message = $sut->claimItem();
+    $this->assertInstanceOf(Item::class, $message);
     $headers = $message->message->getHeaders();
 
     $this->assertEquals('true', $headers['redelivered']);

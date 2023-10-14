@@ -13,6 +13,7 @@ use Drupal\Core\Queue\QueueWorkerManagerInterface;
 use Drupal\Core\Queue\RequeueException;
 use Drupal\Core\Queue\SuspendQueueException;
 use Drupal\stomp\Exception\ConsumerException;
+use Drupal\stomp\Queue\Item;
 use Drupal\stomp\Queue\Queue;
 use Psr\Log\LoggerInterface;
 
@@ -90,7 +91,7 @@ final class Consumer implements ConsumerInterface {
       try {
         $item = $queue->claimItem($options->lease);
 
-        if (!$item) {
+        if (!$item instanceof Item) {
           time_nanosleep(0, $this->parameters['read_interval']);
 
           continue;
@@ -100,7 +101,7 @@ final class Consumer implements ConsumerInterface {
 
         $this->log(RfcLogLevel::INFO, 'Processed item @id from @name queue.', [
           '@name' => $name,
-          '@id' => $item->item_id,
+          '@id' => $item->id,
         ]);
         $count++;
       }
@@ -110,7 +111,7 @@ final class Consumer implements ConsumerInterface {
 
         $this->log(RfcLogLevel::DEBUG, 'Item @id put back on @name queue.', [
           '@name' => $name,
-          '@id' => $item->item_id,
+          '@id' => $item->id,
         ]);
       }
       // @todo Support delay.
@@ -146,7 +147,10 @@ final class Consumer implements ConsumerInterface {
    */
   private function createQueueWorker(string $name) : QueueWorkerInterface {
     try {
-      return $this->workerManager->createInstance($name);
+      $instance = $this->workerManager->createInstance($name);
+      assert($instance instanceof QueueWorkerInterface);
+
+      return $instance;
     }
     catch (PluginException) {
     }

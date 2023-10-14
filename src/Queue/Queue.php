@@ -74,12 +74,14 @@ class Queue implements ReliableQueueInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @param mixed $data
+   *   The data.
    */
   public function createItem($data) : false|int {
-    /** @var \Drupal\stomp\Event\MessageEvent $event */
-    $event = $this->eventDispatcher->dispatch(MessageEvent::create($data));
-
     try {
+      /** @var \Drupal\stomp\Event\MessageEvent $event */
+      $event = $this->eventDispatcher->dispatch(MessageEvent::create($data));
       $this->connect();
 
       $status = $this->client
@@ -87,7 +89,7 @@ class Queue implements ReliableQueueInterface {
 
       return $status ? $this->itemId++ : FALSE;
     }
-    catch (StompException $e) {
+    catch (StompException | \InvalidArgumentException $e) {
       $this->logger->error((string) new FormattableMarkup('Failed to send item to @queue: @message', [
         '@queue' => $this->getDestination(),
         '@message' => $e->getMessage(),
@@ -98,19 +100,19 @@ class Queue implements ReliableQueueInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @param int $lease_time
+   *   The lease time.
    */
-  public function claimItem($lease_time = 3600) : object|false {
+  public function claimItem($lease_time = 3600) : Item|false {
     try {
       $message = $this->connect()->read();
 
       if (!$message instanceof Frame) {
         return FALSE;
       }
-      return (object) [
-        'item_id' => $message->getMessageId(),
-        'message' => $message,
-        'data' => $this->decodeMessage($message),
-      ];
+
+      return $this->toItem($message);
     }
     catch (StompException $e) {
       $this->logger->error((string) new FormattableMarkup('Failed to read item from @queue: @message', [
@@ -119,6 +121,23 @@ class Queue implements ReliableQueueInterface {
       ]));
     }
     return FALSE;
+  }
+
+  /**
+   * Converts a frame object to Item.
+   *
+   * @param \Stomp\Transport\Frame $message
+   *   The message to convert.
+   *
+   * @return \Drupal\stomp\Queue\Item
+   *   The item object.
+   */
+  public function toItem(Frame $message) : Item {
+    return new Item(
+      id: $message->getMessageId(),
+      data: $this->decodeMessage($message),
+      message: $message,
+    );
   }
 
   /**
@@ -143,9 +162,12 @@ class Queue implements ReliableQueueInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @param mixed $item
+   *   The item.
    */
   public function deleteItem($item) : void {
-    if (!isset($item->message) || !$item->message instanceof Frame) {
+    if (!$item instanceof Item) {
       return;
     }
     try {
@@ -161,6 +183,9 @@ class Queue implements ReliableQueueInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @param mixed $item
+   *   The item.
    */
   public function releaseItem($item) : bool {
     // STOMP does not support redelivering items. The item is redelivered
