@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace Drupal\stomp\Queue;
 
+use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Core\Queue\ReliableQueueInterface;
 use Drupal\stomp\Event\MessageEvent;
 use Psr\Log\LoggerInterface;
@@ -18,14 +19,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 /**
  * A service to interact with STOMP server.
  */
-final class Queue implements ReliableQueueInterface {
-
-  /**
-   * Whether to continue processing.
-   *
-   * @var bool
-   */
-  private bool $continueReading = TRUE;
+class Queue implements ReliableQueueInterface {
 
   /**
    * The item ID counter.
@@ -45,15 +39,12 @@ final class Queue implements ReliableQueueInterface {
    *   The event dispatcher.
    * @param \Psr\Log\LoggerInterface $logger
    *   The logger.
-   * @param int $readInterval
-   *   The read interval.
    */
   public function __construct(
     private readonly Client $client,
     private readonly DurableSubscription $durableSubscription,
     private readonly EventDispatcherInterface $eventDispatcher,
     private readonly LoggerInterface $logger,
-    private readonly int $readInterval,
   ) {
   }
 
@@ -82,13 +73,6 @@ final class Queue implements ReliableQueueInterface {
   }
 
   /**
-   * Request processing to be stopped.
-   */
-  public function stop() : void {
-    $this->continueReading = FALSE;
-  }
-
-  /**
    * {@inheritdoc}
    */
   public function createItem($data) : false|int {
@@ -104,10 +88,10 @@ final class Queue implements ReliableQueueInterface {
       return $status ? $this->itemId++ : FALSE;
     }
     catch (StompException $e) {
-      $this->logger->error('Failed to send item to %queue: @message', [
-        '%queue' => $this->getDestination(),
+      $this->logger->error((string) new FormattableMarkup('Failed to send item to @queue: @message', [
+        '@queue' => $this->getDestination(),
         '@message' => $e->getMessage(),
-      ]);
+      ]));
     }
     return FALSE;
   }
@@ -116,29 +100,23 @@ final class Queue implements ReliableQueueInterface {
    * {@inheritdoc}
    */
   public function claimItem($lease_time = 3600) : object|false {
-    while ($this->continueReading) {
-      try {
-        $message = $this->connect()->read();
+    try {
+      $message = $this->connect()->read();
 
-        if (!$message instanceof Frame) {
-          if ($this->readInterval > 0) {
-            time_nanosleep(0, $this->readInterval);
-          }
-          continue;
-        }
-        return (object) [
-          'item_id' => $message->getMessageId(),
-          'message' => $message,
-          'data' => $this->decodeMessage($message),
-        ];
+      if (!$message instanceof Frame) {
+        return FALSE;
       }
-      catch (StompException $e) {
-        $this->logger->error('Failed to read item from %queue: @message', [
-          '%queue' => $this->getDestination(),
-          '@message' => $e->getMessage(),
-        ]);
-        $this->stop();
-      }
+      return (object) [
+        'item_id' => $message->getMessageId(),
+        'message' => $message,
+        'data' => $this->decodeMessage($message),
+      ];
+    }
+    catch (StompException $e) {
+      $this->logger->error((string) new FormattableMarkup('Failed to read item from @queue: @message', [
+        '@queue' => $this->getDestination(),
+        '@message' => $e->getMessage(),
+      ]));
     }
     return FALSE;
   }
@@ -167,17 +145,17 @@ final class Queue implements ReliableQueueInterface {
    * {@inheritdoc}
    */
   public function deleteItem($item) : void {
-    if (!$item->message instanceof Frame) {
+    if (!isset($item->message) || !$item->message instanceof Frame) {
       return;
     }
     try {
       $this->connect()->ack($item->message);
     }
     catch (StompException $e) {
-      $this->logger->error('Failed to ACK message from %queue: @message', [
-        '%queue' => $this->getDestination(),
+      $this->logger->error((string) new FormattableMarkup('Failed to ACK message from @queue: @message', [
+        '@queue' => $this->getDestination(),
         '@message' => $e->getMessage(),
-      ]);
+      ]));
     }
   }
 

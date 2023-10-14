@@ -9,7 +9,6 @@ use Drupal\Core\DependencyInjection\ServiceProviderBase;
 use Drupal\Core\Site\Settings;
 use Drupal\stomp\Queue\QueueFactory;
 use Symfony\Component\DependencyInjection\Definition;
-use Symfony\Component\DependencyInjection\Parameter;
 use Symfony\Component\DependencyInjection\Reference;
 use Webmozart\Assert\Assert;
 
@@ -47,7 +46,6 @@ final class StompServiceProvider extends ServiceProviderBase {
         $stompClient,
         new Reference('event_dispatcher'),
         new Reference('logger.channel.stomp'),
-        new Parameter('stomp.read_interval'),
       ]);
       $queueFactory->setPublic(TRUE);
       $container->setDefinition('queue.stomp.' . $key, $queueFactory);

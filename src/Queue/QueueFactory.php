@@ -25,15 +25,12 @@ final class QueueFactory {
    *   The event dispatcher.
    * @param \Psr\Log\LoggerInterface $logger
    *   The logger.
-   * @param int $readInterval
-   *   The default read interval.
    */
   public function __construct(
     private readonly string $destination,
     private readonly Client $client,
     private readonly EventDispatcherInterface $eventDispatcher,
     private readonly LoggerInterface $logger,
-    private readonly int $readInterval,
   ) {
   }
 
@@ -61,7 +58,6 @@ final class QueueFactory {
       $durableSubscription,
       $this->eventDispatcher,
       $this->logger,
-      $this->readInterval,
     );
   }
 
