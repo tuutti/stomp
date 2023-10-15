@@ -48,7 +48,7 @@ jobs:
         run: echo "MODULE_NAME=$(cat composer.json | jq -r .name | awk -F/ '{print $NF}')" >> $GITHUB_ENV
 
       - name: Set module folder
-        run: echo "MODULE_FOLDER=web/modules/contrib/$MODULE_NAME" >> $GITHUB_ENV
+        run: echo "MODULE_FOLDER=web/modules/custom/$MODULE_NAME" >> $GITHUB_ENV
 
       - name: Setup composer and dependencies
         run: |
@@ -57,6 +57,9 @@ jobs:
           cat composer.json
           composer config repositories.5 path $GITHUB_WORKSPACE
           composer install
+
+      - name: Symlink module
+        run: ln -s $GITHUB_WORKSPACE $MODULE_FOLDER
 
       - name: Run PHPStan
         run: |
