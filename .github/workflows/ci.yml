@@ -69,7 +69,8 @@ jobs:
         run: composer install
 
       - name: Symlink module
-        run: php symlink_project.php $MODULE_NAME
+        working-directory: ${{ env.DRUPAL_ROOT }}
+        run: mkdir -p $MODULE_NAME && ln -s $GITHUB_WORKSPACE $MODULE_FOLDER
 
       - name: Run PHPStan
         working-directory: ${{ env.DRUPAL_ROOT }}
