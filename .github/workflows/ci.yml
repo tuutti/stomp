@@ -14,9 +14,9 @@ jobs:
     strategy:
       matrix:
         php-version: ['8.2']
-        core: ['10.1.x']
+        core: ['10.1']
         include:
-          - core: 9.5.x
+          - core: 9.5
             php-version: '8.1'
     container:
       image: ghcr.io/tuutti/drupal-php-docker:${{ matrix.php-version }}
