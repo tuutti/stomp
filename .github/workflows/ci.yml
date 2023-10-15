@@ -70,7 +70,7 @@ jobs:
       - name: Symlink module
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          mkdir -p $MODULE_FOLDER && ln -s $GITHUB_WORKSPACE $MODULE_FOLDER
+          mkdir -p $MODULE_FOLDER && ln -s $GITHUB_WORKSPACE $MODULE_FOLDER/
           ls -la web/modules/custom
           ls -la $MODULE_FOLDER
 
