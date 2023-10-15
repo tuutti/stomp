@@ -68,7 +68,9 @@ jobs:
 
       - name: Setup composer and dependencies
         working-directory: ${{ env.DRUPAL_ROOT }}
-        run: composer install
+        run: |
+          composer install
+          composer show
 
       - name: Symlink module
         working-directory: ${{ env.DRUPAL_ROOT }}
