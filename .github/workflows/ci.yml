@@ -60,7 +60,7 @@ jobs:
         run: |
           composer config repositories.5 path $GITHUB_WORKSPACE
           curl https://git.drupalcode.org/project/gitlab_templates/-/raw/1.0.x/scripts/expand_composer_json.php > expand_composer_json
-          php expand_composer_json
+          php expand_composer_json $MODULE_NAME
           composer require drupal/$MODULE_NAME -W
 
       - name: Run PHPStan
