@@ -103,7 +103,7 @@ jobs:
 
       - name: Run PHPUnit tests
         working-directory: ${{ env.MODULE_FOLDER }}
-        run: phpunit -c tests/phpunit.xml .
+        run: $DRUPAL_ROOT/vendor/phpunit -c tests/phpunit.xml .
 
       - name: Upload test coverage
         working-directory: ${{ env.MODULE_FOLDER }}
