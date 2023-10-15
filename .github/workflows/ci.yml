@@ -59,7 +59,11 @@ jobs:
           composer install
 
       - name: Symlink module
-        run: ln -s $GITHUB_WORKSPACE $MODULE_FOLDER
+        run: |
+          ls -la
+          ls -la web/modules/
+          ls -la web/modules/custom
+          ln -s $GITHUB_WORKSPACE $MODULE_FOLDER
 
       - name: Run PHPStan
         run: |
@@ -76,7 +80,7 @@ jobs:
 
       - name: Start services
         run: |
-          chromedriver --port=4444 > /dev/null 2>&1 &
+          vendor/bin/drush runserver $SIMPLETEST_BASE_URL --dns > /dev/null 2>&1 &
           # Wait for Drush server to start.
           for i in {1..5}; do
             RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$SIMPLETEST_BASE_URL" || true);
