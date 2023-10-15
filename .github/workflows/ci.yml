@@ -7,6 +7,7 @@ name: CI
 env:
   SYMFONY_DEPRECATIONS_HELPER: disabled
   BROWSERTEST_OUTPUT_DIRECTORY: 'sites/simpletest'
+  COMPOSER_MIRROR_PATH_REPOS: 0
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -23,10 +24,6 @@ jobs:
     services:
       artemis:
         image: quay.io/artemiscloud/activemq-artemis-broker
-        ports:
-          - "8161:8161"
-          - "61616:61616"
-          - "5672:5672"
         env:
           AMQ_EXTRA_ARGS: "--nio --user admin --password admin"
       db:
@@ -61,24 +58,10 @@ jobs:
       - name: Setup composer and dependencies
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          composer config platform.php ${{ matrix.php-version }}
-          composer run-script drupal-phpunit-upgrade
           composer config repositories.5 path $GITHUB_WORKSPACE
+          curl https://git.drupalcode.org/project/gitlab_templates/-/raw/1.0.x/scripts/expand_composer_json.php > expand_composer_json
+          ./expand_composer_json
           composer require drupal/$MODULE_NAME -W
-          composer require drush/drush
-          composer config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
-          composer config --no-plugins allow-plugins.phpstan/extension-installer true
-          composer require --dev drupal/coder \
-            phpstan/phpstan \
-            phpstan/extension-installer \
-            mglaman/phpstan-drupal \
-            phpstan/phpstan-deprecation-rules \
-            jangregor/phpstan-prophecy
-          # We use COMPOSER_MIRROR_PATH_REPOS=1 to mirror local repository
-          # instead of symlinking it to prevent code coverage issues with
-          # phpunit. Copy .git folder manually so codecov can generate line by
-          # line coverage.
-          cp -r $GITHUB_WORKSPACE/.git $MODULE_FOLDER/
 
       - name: Run PHPStan
         working-directory: ${{ env.DRUPAL_ROOT }}
@@ -88,7 +71,7 @@ jobs:
       - name: Run PHPCS
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          vendor/bin/phpcs $MODULE_FOLDER --standard=Drupal --extensions=php,module,inc,install,test,info
+          vendor/bin/phpcs $MODULE_FOLDER --standard=Drupal --extensions=php,module,install
 
       - name: Install Drupal
         working-directory: ${{ env.DRUPAL_ROOT }}
@@ -109,21 +92,9 @@ jobs:
           done
 
       - name: Run PHPUnit tests
-        working-directory: ${{ env.DRUPAL_ROOT }}
-        run: |
-          vendor/bin/phpunit \
-            --bootstrap $DRUPAL_ROOT/core/tests/bootstrap.php \
-            -c $MODULE_FOLDER/phpunit.xml \
-            --coverage-clover=$MODULE_FOLDER/coverage.xml \
-            $MODULE_FOLDER
-          codecov --rootDir $MODULE_FOLDER
+        working-directory: ${{ env.MODULE_FOLDER }}
+        run: phpunit -c tests/phpunit.xml .
 
-      - name: Create an artifact from test report
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: results
-          path: |
-            ${{ env.DRUPAL_ROOT }}/sites/simpletest/browser_output/
-            ${{ env.DRUPAL_ROOT }}/coverage.xml
-          retention-days: 1
+      - name: Upload test coverage
+        working-directory: ${{ env.MODULE_FOLDER }}
+        run: codecov

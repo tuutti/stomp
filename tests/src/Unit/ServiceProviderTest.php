@@ -17,12 +17,33 @@ use Drupal\Tests\UnitTestCase;
 class ServiceProviderTest extends UnitTestCase {
 
   /**
+   * Asserts expected services.
+   *
+   * @param bool $expected
+   *   Whether service should be enabled or not.
+   * @param \Drupal\Core\DependencyInjection\ContainerBuilder $container
+   *   The container to test.
+   */
+  private function assertServices(bool $expected, ContainerBuilder $container) : void {
+    $services = [
+      'queue.stomp.first',
+      'queue.stomp.second',
+    ];
+
+    foreach ($services as $service) {
+      $this->assertEquals($expected, $container->has($service));
+    }
+  }
+
+  /**
    * Tests dynamic service creation with empty settings.
    */
   public function testEmptySettingsRegister() : void {
+    new Settings([]);
     $container = new ContainerBuilder();
     $sut = new StompServiceProvider();
     $sut->register($container);
+    $this->assertServices(FALSE, $container);
   }
 
   /**
@@ -59,15 +80,7 @@ class ServiceProviderTest extends UnitTestCase {
 
     $sut = new StompServiceProvider();
     $sut->register($container);
-
-    $services = [
-      'queue.stomp.first',
-      'queue.stomp.second',
-    ];
-
-    foreach ($services as $service) {
-      $this->assertTrue($container->has($service));
-    }
+    $this->assertServices(TRUE, $container);
   }
 
 }
