@@ -50,6 +50,9 @@ jobs:
       - name: Set Drupal root
         run: echo "DRUPAL_ROOT=$HOME/drupal" >> $GITHUB_ENV
 
+      - name: Create Drupal root
+        run: mkdir $DRUPAL_ROOT
+
       - name: Set module folder
         run: echo "MODULE_FOLDER=$DRUPAL_ROOT/modules/contrib/$MODULE_NAME" >> $GITHUB_ENV
 
