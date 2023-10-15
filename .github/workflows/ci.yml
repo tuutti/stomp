@@ -64,7 +64,7 @@ jobs:
       - name: Setup composer and dependencies
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          composer require drupal/$MODULE_NAME
+          composer require drupal/$MODULE_NAME -W
           # We use COMPOSER_MIRROR_PATH_REPOS=1 to mirror local repository
           # instead of symlinking it to prevent code coverage issues with
           # phpunit. Copy .git folder manually so codecov can generate line by
