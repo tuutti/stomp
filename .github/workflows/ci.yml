@@ -44,21 +44,31 @@ jobs:
       - name: Set target core
         run: echo "_TARGET_CORE=${{ matrix.core }}" >> $GITHUB_ENV
 
+      - name: Set Drupal root
+        run: echo "DRUPAL_ROOT=$HOME/drupal" >> $GITHUB_ENV
+
+      - name: Create Drupal root
+        run: mkdir $DRUPAL_ROOT
+
       - name: Parse $MODULE_NAME from composer.json
         run: echo "MODULE_NAME=$(cat composer.json | jq -r .name | awk -F/ '{print $NF}')" >> $GITHUB_ENV
 
       - name: Set module folder
         run: echo "MODULE_FOLDER=web/modules/custom/$MODULE_NAME" >> $GITHUB_ENV
 
-      - name: Setup composer and dependencies
+      - name: Merge composer.json files
         run: |
           curl https://git.drupalcode.org/project/gitlab_templates/-/raw/1.0.x/scripts/expand_composer_json.php > expand_composer_json
           php expand_composer_json $MODULE_NAME
           cat composer.json
-          composer config repositories.5 path $GITHUB_WORKSPACE
-          composer install
+          cp composer.json $DRUPAL_ROOT
+
+      - name: Setup composer and dependencies
+        working-directory: ${{ env.DRUPAL_ROOT }}
+        run: composer install
 
       - name: Symlink module
+        working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
           ls -la .
           ls -la web/modules/
@@ -66,19 +76,23 @@ jobs:
           ln -s $GITHUB_WORKSPACE $MODULE_FOLDER
 
       - name: Run PHPStan
+        working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
           vendor/bin/phpstan analyze -c $MODULE_FOLDER/phpstan.neon $MODULE_FOLDER
 
       - name: Run PHPCS
+        working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
           vendor/bin/phpcs $MODULE_FOLDER --standard=Drupal --extensions=php,module,install
 
       - name: Install Drupal
+        working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
           php -d sendmail_path=$(which true); vendor/bin/drush --yes -v site-install minimal --db-url="$SIMPLETEST_DB"
           vendor/bin/drush en $MODULE_NAME -y
 
       - name: Start services
+        working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
           vendor/bin/drush runserver $SIMPLETEST_BASE_URL --dns > /dev/null 2>&1 &
           # Wait for Drush server to start.
