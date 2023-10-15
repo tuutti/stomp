@@ -17,7 +17,7 @@ $json_project['repositories'][] = [
 $json_project['config']['platform']['php'] = $php_version;
 
 $json_core = read_composer_json('composer.json');
-$json_rich = merge_deep($json_project, $json_core);
+$json_rich = merge_deep($json_core, $json_project);
 // Remove empty top-level items.
 $json_rich = array_filter($json_rich);
 
