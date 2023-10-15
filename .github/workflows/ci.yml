@@ -15,7 +15,7 @@ jobs:
         php-version: ['8.2']
         core: ['10.1.x']
         include:
-          - core: 9.5.x
+          - core: '9.5.x'
             php-version: '8.1'
     container:
       image: ghcr.io/tuutti/drupal-php-docker:${{ matrix.php-version }}
@@ -23,10 +23,6 @@ jobs:
     services:
       artemis:
         image: quay.io/artemiscloud/activemq-artemis-broker
-        ports:
-          - "8161:8161"
-          - "61616:61616"
-          - "5672:5672"
         env:
           AMQ_EXTRA_ARGS: "--nio --user admin --password admin"
       db:
@@ -44,36 +40,31 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Parse $MODULE_NAME from composer.json
-        run: echo "MODULE_NAME=$(cat composer.json | jq -r .name | awk -F/ '{print $NF}')" >> $GITHUB_ENV
-
       - name: Set Drupal root
         run: echo "DRUPAL_ROOT=$HOME/drupal" >> $GITHUB_ENV
+
+      - name: Clone Drupal
+        run: git clone --depth 1 --branch "${{ matrix.core }}" https://git.drupal.org/project/drupal.git/ $DRUPAL_ROOT
+
+      - name: Parse $MODULE_NAME from composer.json
+        run: echo "MODULE_NAME=$(cat composer.json | jq -r .name | awk -F/ '{print $NF}')" >> $GITHUB_ENV
 
       - name: Set module folder
         run: echo "MODULE_FOLDER=$DRUPAL_ROOT/modules/contrib/$MODULE_NAME" >> $GITHUB_ENV
 
-      - name: Clone drupal
+      - name: Set path
+        run: echo "PATH=$PATH:$DRUPAL_ROOT/vendor/bin" >> $GITHUB_ENV
+
+      - name: Merge composer.json files
+        working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          git clone --depth 1 --branch "${{ matrix.core }}" \
-            https://git.drupal.org/project/drupal.git/ $DRUPAL_ROOT
+          php $GITHUB_WORKSPACE/.github/expand_composer_json.php $GITHUB_WORKSPACE/composer.json $GITHUB_WORKSPACE ${{ matrix.php-version }}
+          cat composer.json
 
       - name: Setup composer and dependencies
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          composer config platform.php ${{ matrix.php-version }}
-          composer run-script drupal-phpunit-upgrade
-          composer config repositories.5 path $GITHUB_WORKSPACE
           composer require drupal/$MODULE_NAME -W
-          composer require drush/drush
-          composer config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
-          composer config --no-plugins allow-plugins.phpstan/extension-installer true
-          composer require --dev drupal/coder \
-            phpstan/phpstan \
-            phpstan/extension-installer \
-            mglaman/phpstan-drupal \
-            phpstan/phpstan-deprecation-rules \
-            jangregor/phpstan-prophecy
           # We use COMPOSER_MIRROR_PATH_REPOS=1 to mirror local repository
           # instead of symlinking it to prevent code coverage issues with
           # phpunit. Copy .git folder manually so codecov can generate line by
@@ -82,24 +73,22 @@ jobs:
 
       - name: Run PHPStan
         working-directory: ${{ env.DRUPAL_ROOT }}
-        run: |
-          vendor/bin/phpstan analyze -c $MODULE_FOLDER/phpstan.neon $MODULE_FOLDER
+        run: phpstan analyze -c $MODULE_FOLDER/phpstan.neon $MODULE_FOLDER
 
       - name: Run PHPCS
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          vendor/bin/phpcs $MODULE_FOLDER --standard=Drupal --extensions=php,module,inc,install,test,info
+          phpcs $MODULE_FOLDER --standard=Drupal --extensions=php,module,install
 
       - name: Install Drupal
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          php -d sendmail_path=$(which true); vendor/bin/drush --yes -v site-install minimal --db-url="$SIMPLETEST_DB"
-          vendor/bin/drush en $MODULE_NAME -y
+          php -d sendmail_path=$(which true); drush --yes -v site-install minimal --db-url="$SIMPLETEST_DB"
 
       - name: Start services
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          chromedriver --port=4444 > /dev/null 2>&1 &
+          drush runserver $SIMPLETEST_BASE_URL --dns > /dev/null 2>&1 &
           # Wait for Drush server to start.
           for i in {1..5}; do
             RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$SIMPLETEST_BASE_URL" || true);
@@ -109,21 +98,9 @@ jobs:
           done
 
       - name: Run PHPUnit tests
-        working-directory: ${{ env.DRUPAL_ROOT }}
-        run: |
-          vendor/bin/phpunit \
-            --bootstrap $DRUPAL_ROOT/core/tests/bootstrap.php \
-            -c $MODULE_FOLDER/phpunit.xml \
-            --coverage-clover=$MODULE_FOLDER/coverage.xml \
-            $MODULE_FOLDER
-          codecov --rootDir $MODULE_FOLDER
+        working-directory: ${{ env.MODULE_FOLDER }}
+        run: phpunit -c tests/phpunit.xml .
 
-      - name: Create an artifact from test report
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: results
-          path: |
-            ${{ env.DRUPAL_ROOT }}/sites/simpletest/browser_output/
-            ${{ env.DRUPAL_ROOT }}/coverage.xml
-          retention-days: 1
+      - name: Upload test coverage
+        working-directory: ${{ env.MODULE_FOLDER }}
+        run: codecov

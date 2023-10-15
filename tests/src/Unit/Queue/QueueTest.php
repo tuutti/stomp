@@ -29,6 +29,7 @@ class QueueTest extends UnitTestCase {
   public function testDeleteItemInvalidType() : void {
     $client = $this->prophesize(Client::class);
     $subscription = $this->getDurableSubscription();
+    $subscription->ack(Argument::any())->shouldNotBeCalled();
     $sut = $this->getQueue($client->reveal(), $subscription->reveal());
     $sut->deleteItem(NULL);
     $sut->deleteItem((object) ['message' => NULL]);
