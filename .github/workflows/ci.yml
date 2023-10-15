@@ -14,9 +14,9 @@ jobs:
     strategy:
       matrix:
         php-version: ['8.2']
-        core: ['10.1']
+        core: ['^10.1']
         include:
-          - core: 9.5
+          - core: '^9.5'
             php-version: '8.1'
     container:
       image: ghcr.io/tuutti/drupal-php-docker:${{ matrix.php-version }}
@@ -42,7 +42,7 @@ jobs:
           fetch-depth: 1
 
       - name: Set target core
-        run: echo "_TARGET_CORE='${{ matrix.core }}" >> $GITHUB_ENV
+        run: echo "_TARGET_CORE=${{ matrix.core }}" >> $GITHUB_ENV
 
       - name: Parse $MODULE_NAME from composer.json
         run: echo "MODULE_NAME=$(cat composer.json | jq -r .name | awk -F/ '{print $NF}')" >> $GITHUB_ENV
