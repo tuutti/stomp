@@ -70,7 +70,7 @@ jobs:
       - name: Symlink module
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          mkdir -p $MODULE_FOLDER && ln -s $GITHUB_WORKSPACE web/modules/custom
+          mkdir -p web/modules/custom && ln -s $GITHUB_WORKSPACE web/modules/custom
           ls -la web/modules/custom
           ls -la $MODULE_FOLDER
 
@@ -83,12 +83,6 @@ jobs:
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
           vendor/bin/phpcs $MODULE_FOLDER --standard=Drupal --extensions=php,module,install
-
-      - name: Install Drupal
-        working-directory: ${{ env.DRUPAL_ROOT }}
-        run: |
-          php -d sendmail_path=$(which true); vendor/bin/drush --yes -v site-install minimal --db-url="$SIMPLETEST_DB"
-          vendor/bin/drush en $MODULE_NAME -y
 
       - name: Start services
         working-directory: ${{ env.DRUPAL_ROOT }}
