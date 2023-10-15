@@ -14,8 +14,8 @@ $json_project['repositories'][] = [
   'url' => $module_path,
 ];
 // Override default platform version.
-$json_core['config']['platform']['php'] = $php_version;
 $json_core = read_composer_json('composer.json');
+$json_core['config']['platform']['php'] = $php_version;
 $json_rich = merge_deep($json_project, $json_core);
 // Remove empty top-level items.
 $json_rich = array_filter($json_rich);
