@@ -56,6 +56,9 @@ jobs:
       - name: Set module folder
         run: echo "MODULE_FOLDER=$DRUPAL_ROOT/web/modules/custom/$MODULE_NAME" >> $GITHUB_ENV
 
+      - name: Set path
+        run: echo "PATH=$PATH:$DRUPAL_ROOT/vendor/bin" >> $GITHUB_ENV
+
       - name: Merge composer.json files
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
@@ -69,30 +72,27 @@ jobs:
 
       - name: Symlink module
         working-directory: ${{ env.DRUPAL_ROOT }}
-        run: |
-          mkdir -p web/modules/custom && ln -s $GITHUB_WORKSPACE web/modules/custom
-          ls -la web/modules/custom
-          ls -la $MODULE_FOLDER
+        run: mkdir -p web/modules/custom && ln -s $GITHUB_WORKSPACE web/modules/custom
 
       - name: Run PHPStan
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          vendor/bin/phpstan analyze -c $MODULE_FOLDER/phpstan.neon $MODULE_FOLDER
+          phpstan analyze -c $MODULE_FOLDER/phpstan.neon $MODULE_FOLDER
 
       - name: Run PHPCS
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          vendor/bin/phpcs $MODULE_FOLDER --standard=Drupal --extensions=php,module,install
+          phpcs $MODULE_FOLDER --standard=Drupal --extensions=php,module,install
 
       - name: Install Drupal
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          php -d sendmail_path=$(which true); vendor/bin/drush --yes -v site-install minimal --db-url="$SIMPLETEST_DB"
+          php -d sendmail_path=$(which true); drush --yes -v site-install minimal --db-url="$SIMPLETEST_DB"
 
       - name: Start services
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          vendor/bin/drush runserver $SIMPLETEST_BASE_URL --dns > /dev/null 2>&1 &
+          drush runserver $SIMPLETEST_BASE_URL --dns > /dev/null 2>&1 &
           # Wait for Drush server to start.
           for i in {1..5}; do
             RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$SIMPLETEST_BASE_URL" || true);
@@ -103,7 +103,7 @@ jobs:
 
       - name: Run PHPUnit tests
         working-directory: ${{ env.MODULE_FOLDER }}
-        run: $DRUPAL_ROOT/vendor/phpunit -c tests/phpunit.xml .
+        run: phpunit -c tests/phpunit.xml .
 
       - name: Upload test coverage
         working-directory: ${{ env.MODULE_FOLDER }}
