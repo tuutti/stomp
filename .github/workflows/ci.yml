@@ -43,8 +43,8 @@ jobs:
       - name: Set Drupal root
         run: echo "DRUPAL_ROOT=$HOME/drupal" >> $GITHUB_ENV
 
-      - name: Create and populate Drupal root
-        run: mkdir $DRUPAL_ROOT && cp .github/expand_composer_json.php composer.json $DRUPAL_ROOT
+      - name: Clone Drupal
+        run: git clone --depth 1 --branch "${{ matrix.core }}" https://git.drupal.org/project/drupal.git/ $DRUPAL_ROOT
 
       - name: Parse $MODULE_NAME from composer.json
         run: echo "MODULE_NAME=$(cat composer.json | jq -r .name | awk -F/ '{print $NF}')" >> $GITHUB_ENV
@@ -58,7 +58,7 @@ jobs:
       - name: Merge composer.json files
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          php expand_composer_json.php $GITHUB_WORKSPACE ${{ matrix.core }}
+          php expand_composer_json.php $GITHUB_WORKSPACE/composer.json $GITHUB_WORKSPACE
           cat composer.json
 
       - name: Setup composer and dependencies
