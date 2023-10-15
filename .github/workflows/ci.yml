@@ -58,7 +58,7 @@ jobs:
       - name: Merge composer.json files
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          php expand_composer_json.php $GITHUB_WORKSPACE/composer.json $GITHUB_WORKSPACE
+          php $GITHUB_WORKSPACE/.github/expand_composer_json.php $GITHUB_WORKSPACE/composer.json $GITHUB_WORKSPACE
           cat composer.json
 
       - name: Setup composer and dependencies
