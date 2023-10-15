@@ -40,14 +40,11 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Set target core
-        run: echo "_TARGET_CORE=${{ matrix.core }}" >> $GITHUB_ENV
-
       - name: Set Drupal root
         run: echo "DRUPAL_ROOT=$HOME/drupal" >> $GITHUB_ENV
 
-      - name: Create Drupal root
-        run: mkdir $DRUPAL_ROOT -p && cp composer.json $DRUPAL_ROOT
+      - name: Create and populate Drupal root
+        run: mkdir $DRUPAL_ROOT && cp .github/expand_composer_json.php composer.json $DRUPAL_ROOT
 
       - name: Parse $MODULE_NAME from composer.json
         run: echo "MODULE_NAME=$(cat composer.json | jq -r .name | awk -F/ '{print $NF}')" >> $GITHUB_ENV
@@ -61,16 +58,13 @@ jobs:
       - name: Merge composer.json files
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          curl -OL https://git.drupalcode.org/project/gitlab_templates/-/raw/1.0.x/scripts/expand_composer_json.php
-          php expand_composer_json.php $MODULE_NAME
-          cat <<< $(jq '.name = "drupal/test-runner"' composer.json) > composer.json
+          php expand_composer_json.php $GITHUB_WORKSPACE ${{ matrix.core }}
           cat composer.json
 
       - name: Setup composer and dependencies
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          composer config repositories.5 path $GITHUB_WORKSPACE
-          composer install
+          composer require drupal/$MODULE_NAME
           # We use COMPOSER_MIRROR_PATH_REPOS=1 to mirror local repository
           # instead of symlinking it to prevent code coverage issues with
           # phpunit. Copy .git folder manually so codecov can generate line by
