@@ -47,8 +47,8 @@ jobs:
       - name: Set Drupal root
         run: echo "DRUPAL_ROOT=$HOME/drupal" >> $GITHUB_ENV
 
-      - name: Create Drupal root
-        run: mkdir $DRUPAL_ROOT
+      - name: Setup Drupal root
+        run: mkdir $DRUPAL_ROOT && cp composer.json $DRUPAL_ROOT
 
       - name: Parse $MODULE_NAME from composer.json
         run: echo "MODULE_NAME=$(cat composer.json | jq -r .name | awk -F/ '{print $NF}')" >> $GITHUB_ENV
@@ -57,11 +57,11 @@ jobs:
         run: echo "MODULE_FOLDER=web/modules/custom/$MODULE_NAME" >> $GITHUB_ENV
 
       - name: Merge composer.json files
+        working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
           curl -OL https://git.drupalcode.org/project/gitlab_templates/-/raw/1.0.x/scripts/expand_composer_json.php
           php expand_composer_json.php $MODULE_NAME
           cat composer.json
-          cp composer.json $DRUPAL_ROOT
 
       - name: Setup composer and dependencies
         working-directory: ${{ env.DRUPAL_ROOT }}
@@ -83,6 +83,11 @@ jobs:
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
           vendor/bin/phpcs $MODULE_FOLDER --standard=Drupal --extensions=php,module,install
+
+      - name: Install Drupal
+        working-directory: ${{ env.DRUPAL_ROOT }}
+        run: |
+          php -d sendmail_path=$(which true); vendor/bin/drush --yes -v site-install minimal --db-url="$SIMPLETEST_DB"
 
       - name: Start services
         working-directory: ${{ env.DRUPAL_ROOT }}
