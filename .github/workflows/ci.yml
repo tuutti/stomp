@@ -59,7 +59,6 @@ jobs:
       - name: Merge composer.json files
         run: |
           curl -OL https://git.drupalcode.org/project/gitlab_templates/-/raw/1.0.x/scripts/expand_composer_json.php
-          curl -OL https://git.drupalcode.org/project/gitlab_templates/-/raw/1.0.x/scripts/symlink_project.php
           php expand_composer_json.php $MODULE_NAME
           cat composer.json
           cp composer.json $DRUPAL_ROOT
@@ -70,7 +69,7 @@ jobs:
 
       - name: Symlink module
         working-directory: ${{ env.DRUPAL_ROOT }}
-        run: mkdir -p $MODULE_NAME && ln -s $GITHUB_WORKSPACE $MODULE_FOLDER
+        run: mkdir -p $MODULE_FOLDER && ln -s $GITHUB_WORKSPACE $MODULE_FOLDER
 
       - name: Run PHPStan
         working-directory: ${{ env.DRUPAL_ROOT }}
