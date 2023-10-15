@@ -41,6 +41,9 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Set target core
+        run: echo "_TARGET_CORE='^${{ matrix.core }}'" >> $GITHUB_ENV
+
       - name: Parse $MODULE_NAME from composer.json
         run: echo "MODULE_NAME=$(cat composer.json | jq -r .name | awk -F/ '{print $NF}')" >> $GITHUB_ENV
 
@@ -50,15 +53,9 @@ jobs:
       - name: Set module folder
         run: echo "MODULE_FOLDER=$DRUPAL_ROOT/modules/contrib/$MODULE_NAME" >> $GITHUB_ENV
 
-      - name: Clone drupal
-        run: |
-          git clone --depth 1 --branch "${{ matrix.core }}" \
-            https://git.drupal.org/project/drupal.git/ $DRUPAL_ROOT
-
       - name: Setup composer and dependencies
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          composer config platform.php ${{ matrix.php-version }}
           composer config repositories.5 path $GITHUB_WORKSPACE
           curl https://git.drupalcode.org/project/gitlab_templates/-/raw/1.0.x/scripts/expand_composer_json.php > expand_composer_json
           php expand_composer_json $MODULE_NAME
