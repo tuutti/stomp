@@ -60,7 +60,7 @@ jobs:
 
       - name: Symlink module
         run: |
-          ls -la
+          ls -la .
           ls -la web/modules/
           ls -la web/modules/custom
           ln -s $GITHUB_WORKSPACE $MODULE_FOLDER
