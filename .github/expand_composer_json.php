@@ -6,13 +6,16 @@
  * @file
  * Populate a composer.json with module's dependencies.
  */
-[, $project_json, $module_path] = $argv;
+[, $project_json, $module_path, $php_version] = $argv;
 
 $json_project = read_composer_json($project_json);
 $json_project['repositories'][] = [
   'type' => 'path',
   'url' => $module_path,
 ];
+// Override default platform version.
+$json_project['config']['platform']['php'] = $php_version;
+
 $json_core = read_composer_json('composer.json');
 $json_rich = merge_deep($json_project, $json_core);
 // Remove empty top-level items.
