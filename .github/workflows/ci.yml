@@ -50,7 +50,7 @@ jobs:
         run: echo "MODULE_NAME=$(cat composer.json | jq -r .name | awk -F/ '{print $NF}')" >> $GITHUB_ENV
 
       - name: Set module folder
-        run: echo "MODULE_FOLDER=$DRUPAL_ROOT/modules/$MODULE_NAME" >> $GITHUB_ENV
+        run: echo "MODULE_FOLDER=$DRUPAL_ROOT/modules/contrib/$MODULE_NAME" >> $GITHUB_ENV
 
       - name: Set path
         run: echo "PATH=$PATH:$DRUPAL_ROOT/vendor/bin" >> $GITHUB_ENV
