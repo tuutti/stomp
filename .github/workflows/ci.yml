@@ -54,7 +54,7 @@ jobs:
         run: echo "MODULE_NAME=$(cat composer.json | jq -r .name | awk -F/ '{print $NF}')" >> $GITHUB_ENV
 
       - name: Set module folder
-        run: echo "MODULE_FOLDER=web/modules/custom/$MODULE_NAME" >> $GITHUB_ENV
+        run: echo "MODULE_FOLDER=$DRUPAL_ROOT/web/modules/custom/$MODULE_NAME" >> $GITHUB_ENV
 
       - name: Merge composer.json files
         working-directory: ${{ env.DRUPAL_ROOT }}
